@@ -13,14 +13,14 @@ class RegistroController extends Controller
         $validator = Validator::make($request->all(), [
             'Nombre' => 'required|string|max:255',
             'Correo' => 'required|email|unique:registros,Correo',
-            'Contraseña' => 'required|string|min:6',
+            'Contrasena' => 'required|string|min:6',
         ], [
             'Nombre.required' => 'El nombre es obligatorio',
             'Correo.required' => 'El correo es obligatorio',
             'Correo.email' => 'El correo debe tener un formato válido',
             'Correo.unique' => 'Este correo ya está registrado',
-            'Contraseña.required' => 'La contraseña es obligatoria',
-            'Contraseña.min' => 'La contraseña debe tener al menos 6 caracteres',
+            'Contrasena.required' => 'La contraseña es obligatoria',
+            'Contrasena.min' => 'La contraseña debe tener al menos 6 caracteres',
         ]);
 
         if ($validator->fails()) {
@@ -36,7 +36,7 @@ class RegistroController extends Controller
             $registro = Registro::create([
                 'Nombre' => $request->Nombre,
                 'Correo' => $request->Correo,
-                'Contraseña' => bcrypt($request->Contraseña), // Encriptar contraseña
+                'Contrasena' => bcrypt($request->Contraseña), // Encriptar contraseña
             ]);
 
             return response()->json([

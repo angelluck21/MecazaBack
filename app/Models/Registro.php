@@ -9,11 +9,11 @@ class Registro extends Model
     protected $fillable = [
         'Nombre',
         'Correo',
-        'Contraseña',
+        'Contrasena',
     ];
 
     protected $hidden = [
-        'Contraseña',
+        'Contrasena',
     ];
 
     protected $casts = [
