@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Registro extends Model
 {
     protected $fillable = [
+        "id_usuario",
         'Nombre',
         'Correo',
         'Contrasena',

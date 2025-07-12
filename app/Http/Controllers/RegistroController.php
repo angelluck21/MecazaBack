@@ -7,8 +7,7 @@ use Illuminate\Support\Facades\Validator;
 
 class RegistroController extends Controller
 {
-    public function Registro(Request $request)
-    {
+    public function Registro(Request $request) {
         // Validar los datos de entrada
         $validator = Validator::make($request->all(), [
             'Nombre' => 'required|string|max:255',
