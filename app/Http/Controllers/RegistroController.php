@@ -8,11 +8,12 @@ use Illuminate\Support\Facades\Validator;
 
 class RegistroController extends Controller
 {
-    //Metodo para afreafar usuario
+
     public function Registro(Request $request){
         User::create([
             "name" => $request->Nombre,
             "email" => $request->Correo,
+            "tel" => $request->Telefono,
             "password" => Hash::make($request->Contrasena),
         ]);
 
@@ -35,5 +36,33 @@ class RegistroController extends Controller
             "status"=> "error",
             "message"=> "Error en las credenciales"
         ], 409);
+    }
+
+    public function GetAll(User $request){
+        return response()->json([
+            "data" => $request->get(),
+            "message" => "Consulta de carros exitosa"
+        ],200);
+    }
+
+    public function Update(Request $request, User $user){
+        $user->update([
+            "name" => $request->Nombre,
+            "email" => $request->Correo,
+            "tel" => $request->Telefono,
+            "password" => $request->Contrasena,
+        ]);
+
+        return response()->json([
+            "message" => "Actualizado exitosamente"
+        ],200);
+    }
+
+    public function Destroy( User $user) {
+        $user->delete();
+
+        return response()->json([
+            "message" => "Jugador eliminado Exitosamente!"
+        ], 200);
     }
 }
