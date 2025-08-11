@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\AgregarcarrosController;
+use App\Http\Controllers\CarrosController;
 use App\Http\Controllers\RegistroController;
 use App\Http\Controllers\EstadosController;
 use App\Http\Controllers\PrecioviajeController;
@@ -15,11 +15,11 @@ Route::put("/actualizarusuario/{user}", [RegistroController::class,"Update"]);
 Route::delete("/eliminarusuario/{user}",[RegistroController::class,"Destroy"]);
 Route::post("/login", [RegistroController::class, "LoginUsuario"]);      //////
 
-Route::get("/listarcarro", [AgregarcarrosController::class,"GetAll"]);
-Route::put("/actualizarcarro/{agregarcarros}", [AgregarcarrosController::class,"Update"]);
-Route::delete("/eliminarcarro/{agregarcarros}",[AgregarcarrosController::class,"Destroy"]);
-Route::put("/actualizarestadocarro/{id_carros}", [AgregarcarrosController::class,"UpdateEstado"]); /////
-Route::post("/asignarasietoscarros", [AgregarcarrosController::class, "AgregarAsientos"]); //////
+Route::post('/agregarcarros', [CarrosController::class, 'Create']);
+Route::get("/listarcarro", [CarrosController::class,"GetAll"]);
+Route::put("/actualizarcarro/{agregarcarros}", [CarrosController::class,"Update"]);
+Route::delete("/eliminarcarro/{agregarcarros}",[CarrosController::class,"Destroy"]);
+Route::put("/actualizarestadocarro/{id_carros}", [CarrosController::class,"UpdateEstado"]); /////
 
 Route::post("/agregarestados",[EstadosController::class,"Create"]);
 Route::get("/listarestados", [EstadosController::class,"GetAll"]);
