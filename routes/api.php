@@ -19,7 +19,7 @@ Route::post('/agregarcarros', [CarrosController::class, 'Create']);
 Route::get("/listarcarro", [CarrosController::class,"GetAll"]);
 Route::put("/actualizarcarro/{agregarcarros}", [CarrosController::class,"Update"]);
 Route::delete("/eliminarcarro/{agregarcarros}",[CarrosController::class,"Destroy"]);
-Route::put("/actualizarestadocarro/{id_carros}", [CarrosController::class,"UpdateEstado"]); /////
+Route::put("/actualizarestadocarro/{carro}", [CarrosController::class,"UpdateEstado"]); /////
 
 Route::post("/agregarestados",[EstadosController::class,"Create"]);
 Route::get("/listarestados", [EstadosController::class,"GetAll"]);

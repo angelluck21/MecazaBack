@@ -8,15 +8,20 @@ class Reservarviaje extends Model
 {
     protected $primaryKey = 'id_reservarviajes';
     protected $fillable = [
-        'regate',
         'comentario',
         'ubicacion',
         'asiento',
         'id_users',
+        'id_carros'
     ];
 
     public function usuario()
     {
         return $this->belongsTo(User::class, 'id_users');
+    }
+
+    public function carro()
+    {
+        return $this->belongsTo(User::class, 'id_carros');
     }
 }

@@ -9,6 +9,7 @@ class Carros extends Model
     protected $primaryKey = 'id_carros';
     protected $fillable = [
         'conductor',
+        'imagencarro',
         'telefono',
         'placa',
         'asientos',
