@@ -3,7 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Reservarviaje;
+use App\Models\Carros;
+use App\Mail\NuevaReservaConductor;
+use App\Mail\ConfirmacionReservaPasajero;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class ReservarviajeController extends Controller
 {
@@ -50,7 +54,7 @@ class ReservarviajeController extends Controller
         }
     }
 
-    // NUEVA FUNCIÓN PARA ENVIAR EMAIL
+    // FUNCIÓN PARA ENVIAR EMAILS
     private function enviarEmailConductor($reservar, $request)
     {
         try {
@@ -58,8 +62,8 @@ class ReservarviajeController extends Controller
             $carro = Carros::find($request->id_carros);
 
             if ($carro) {
-                // Datos para el email
-                $emailData = [
+                // Datos para el email del conductor
+                $emailDataConductor = [
                     'conductorNombre' => $carro->conductor ?? 'Conductor',
                     'conductorEmail' => $carro->email ?? 'conductor@mecaza.com',
                     'pasajeroNombre' => $request->Nombre,
@@ -72,14 +76,37 @@ class ReservarviajeController extends Controller
                     'fechaReserva' => now()->format('d/m/Y H:i:s')
                 ];
 
-                // Enviar email usando Mailtrap
-                Mail::to($carro->email)->send(new NuevaReservaConductor($emailData));
+                // Datos para el email del pasajero
+                $emailDataPasajero = [
+                    'pasajeroNombre' => $request->Nombre,
+                    'conductorNombre' => $carro->conductor ?? 'Conductor',
+                    'asiento' => $request->Asiento,
+                    'ubicacion' => $request->Ubicacion,
+                    'placa' => $carro->placa ?? 'N/A',
+                    'destino' => $carro->destino ?? 'N/A',
+                    'fecha' => $carro->fecha ?? 'N/A',
+                    'hora' => $carro->horasalida ?? 'N/A',
+                    'fechaReserva' => now()->format('d/m/Y H:i:s'),
+                    'telefonoConductor' => $carro->telefono ?? 'No disponible'
+                ];
 
-                \Log::info('Email enviado al conductor: ' . $carro->email);
+                // Enviar email al conductor
+                if ($carro->email) {
+                    Mail::to($carro->email)->send(new NuevaReservaConductor($emailDataConductor));
+                    \Log::info('Email enviado al conductor: ' . $carro->email);
+                }
+
+                // Enviar email de confirmación al pasajero (si tiene email)
+                $usuario = $request->user();
+                if ($usuario && $usuario->email) {
+                    Mail::to($usuario->email)->send(new ConfirmacionReservaPasajero($emailDataPasajero));
+                    \Log::info('Email de confirmación enviado al pasajero: ' . $usuario->email);
+                }
+
             }
 
         } catch (\Exception $e) {
-            \Log::error('Error al enviar email al conductor: ' . $e->getMessage());
+            \Log::error('Error al enviar emails: ' . $e->getMessage());
             // No fallar la reserva si el email falla
         }
     }
