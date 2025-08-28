@@ -14,7 +14,8 @@ return new class extends Migration
         Schema::create('reservarviajes', function (Blueprint $table) {
             $table->id("id_reservarviajes");
             $table-> unsignedBigInteger("id_carros");
-            $table-> string ("comentario");
+            $table-> string ("nombre");
+            $table-> string ("tel");
             $table-> string ("ubicacion");
             $table-> string ("asiento");
             $table-> unsignedBigInteger("id_users");

@@ -8,8 +8,9 @@ class Reservarviaje extends Model
 {
     protected $primaryKey = 'id_reservarviajes';
     protected $fillable = [
-        'comentario',
+        'nombre',
         'ubicacion',
+        'tel',
         'asiento',
         'id_users',
         'id_carros'

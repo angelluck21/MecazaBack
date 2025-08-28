@@ -51,7 +51,7 @@ class RegistroController extends Controller
     {
         return response()->json([
             "data" => $user->get(),
-            "message" => "Consulta de carros exitosa"
+            "message" => "Consulta de usuarios exitosa"
         ], 200);
     }
 

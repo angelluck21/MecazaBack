@@ -4,112 +4,116 @@ namespace App\Http\Controllers;
 
 use App\Models\Reservarviaje;
 use App\Models\Carros;
-use App\Mail\NuevaReservaConductor;
-use App\Mail\ConfirmacionReservaPasajero;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use App\Models\User;
+use Illuminate\Support\Facades\Log;
+use App\Mail\NotificacionReservaConductor;
 
 class ReservarviajeController extends Controller
 {
-  /*  public function Create(Request $request) {
-        $reservar = new Reservarviaje();
-        $reservar-> comentario =$request->Nombre;
-        $reservar-> ubicacion = $request->Ubicacion;
-        $reservar-> asiento = $request->Asiento;
-        $reservar-> id_users = $request->user()->id_users;
-        $reservar-> id_carros = $request->id_carros;
+    /* public function Create(Request $request) {
+         try {
+             // Crear la reserva
+             $reservar = new Reservarviaje();
+             $reservar->nombre = $request->Nombre;
+             $reservar->ubicacion = $request->Ubicacion;
+             $reservar->tel = $request->Telefono;
+             $reservar->asiento = $request->Asiento;
+             $reservar->id_users = $request->user()->id_users;
+             $reservar->tel = $request->user()->Telefono;
+             $reservar->id_carros = $request->id_carros;
 
-        $reservar ->save();
+             $reservar->save();
 
-        return response()->json([
-            "message" => "viaje reservado exitosamente",
-            "data" => $reservar->load('usuario'),
-        ], 201);
-    } */
+             // Cargar las relaciones
+             $reservar->load('usuario');
 
-    public function Create(Request $request)
-    {
-        try {
-            // Crear la reserva (tu código original)
-            $reservar = new Reservarviaje();
-            $reservar->comentario = $request->Nombre;
-            $reservar->ubicacion = $request->Ubicacion;
-            $reservar->asiento = $request->Asiento;
-            $reservar->id_users = $request->user()->id_users;
-            $reservar->id_carros = $request->id_carros;
-            $reservar->save();
+             // Obtener información del carro
+             $carro = Carros::find($request->id_carros);
 
-            // ENVIAR EMAIL AL CONDUCTOR - NUEVO CÓDIGO
-            $this->enviarEmailConductor($reservar, $request);
+             if ($carro) {
+                 // Obtener información del conductor
+                 $conductor = User::where('Nombre', $carro->conductor)
+                     ->orWhere('nombre', $carro->conductor)
+                     ->orWhere('name', $carro->conductor)
+                     ->first();
 
-            return response()->json([
-                "message" => "viaje reservado exitosamente",
-                "data" => $reservar->load(relations: 'usuario')
-            ], status: 201);
+                 if ($conductor && $conductor->email) {
+                     try {
+                         // Preparar datos para el email
+                         $emailData = [
+                             'conductor' => $carro->conductor,
+                             'pasajero' => $request->user()->Nombre ?? $request->user()->nombre ?? 'No especificado',
+                             'telefono' => $request->user()->Telefono ?? 'No especificado',
+                             'ubicacion' => $request->Ubicacion,
+                             'asiento' => $request->Asiento,
+                             'nombre' => $request->Nombre,
+                             'tel' => $request->Telefono,
+                             'placa' => $carro->placa,
+                             'destino' => $carro->destino,
+                             'fecha' => $carro->fecha,
+                             'horasalida' => $carro->horasalida,
+                             'fecha_reserva' => $reservar->created_at ? $reservar->created_at->format('d/m/Y H:i:s') : 'No especificada'
+                         ];
 
-        } catch (\Exception $e) {
-            return response()->json([
-                "message" => "Error al reservar el viaje: " . $e->getMessage()
-            ], status: 500);
-        }
-    }
+                         // Enviar email al conductor
+                         Mail::to($conductor->email)
+                             ->send(new NotificacionReservaConductor($emailData));
 
-    // FUNCIÓN PARA ENVIAR EMAILS
-    private function enviarEmailConductor($reservar, $request)
-    {
-        try {
-            // Obtener información del carro y conductor
-            $carro = Carros::find($request->id_carros);
+                         Log::info('Email enviado exitosamente al conductor', [
+                             'conductor_email' => $conductor->email,
+                             'reserva_id' => $reservar->id
+                         ]);
+                     } catch (\Exception $e) {
+                         Log::error('Error al enviar email al conductor', [
+                             'error' => $e->getMessage(),
+                             'conductor_email' => $conductor->email,
+                             'reserva_id' => $reservar->id
+                         ]);
+                     }
+                 } else {
+                     Log::warning('No se pudo encontrar el conductor o su email', [
+                         'conductor_nombre' => $carro->conductor ?? 'No especificado',
+                         'reserva_id' => $reservar->id
+                     ]);
+                 }
+             }
 
-            if ($carro) {
-                // Datos para el email del conductor
-                $emailDataConductor = [
-                    'conductorNombre' => $carro->conductor ?? 'Conductor',
-                    'conductorEmail' => $carro->email ?? 'conductor@mecaza.com',
-                    'pasajeroNombre' => $request->Nombre,
-                    'asiento' => $request->Asiento,
-                    'ubicacion' => $request->Ubicacion,
-                    'placa' => $carro->placa ?? 'N/A',
-                    'destino' => $carro->destino ?? 'N/A',
-                    'fecha' => $carro->fecha ?? 'N/A',
-                    'hora' => $carro->horasalida ?? 'N/A',
-                    'fechaReserva' => now()->format('d/m/Y H:i:s')
-                ];
+             return response()->json([
+                 "message" => "viaje reservado exitosamente",
+                 "data" => $reservar->load('usuario'),
+             ], 201);
 
-                // Datos para el email del pasajero
-                $emailDataPasajero = [
-                    'pasajeroNombre' => $request->Nombre,
-                    'conductorNombre' => $carro->conductor ?? 'Conductor',
-                    'asiento' => $request->Asiento,
-                    'ubicacion' => $request->Ubicacion,
-                    'placa' => $carro->placa ?? 'N/A',
-                    'destino' => $carro->destino ?? 'N/A',
-                    'fecha' => $carro->fecha ?? 'N/A',
-                    'hora' => $carro->horasalida ?? 'N/A',
-                    'fechaReserva' => now()->format('d/m/Y H:i:s'),
-                    'telefonoConductor' => $carro->telefono ?? 'No disponible'
-                ];
+         } catch (\Exception $e) {
+             Log::error('Error al crear reserva', [
+                 'error' => $e->getMessage(),
+                 'request_data' => $request->all()
+             ]);
 
-                // Enviar email al conductor
-                if ($carro->email) {
-                    Mail::to($carro->email)->send(new NuevaReservaConductor($emailDataConductor));
-                    \Log::info('Email enviado al conductor: ' . $carro->email);
-                }
+             return response()->json([
+                 "message" => "Error al crear la reserva",
+                 "error" => $e->getMessage()
+             ], 500);
+         }
+     }
+ */
+           public function Create(Request $request) {
+                $reservar = new Reservarviaje();
+                $reservar-> nombre =$request->Nombre;
+                $reservar-> tel =$request->Telefono;
+                $reservar-> ubicacion = $request->Ubicacion;
+                $reservar-> asiento = $request->Asiento;
+                $reservar-> id_users = $request->user()->id_users;
+                $reservar-> id_carros = $request->id_carros;
 
-                // Enviar email de confirmación al pasajero (si tiene email)
-                $usuario = $request->user();
-                if ($usuario && $usuario->email) {
-                    Mail::to($usuario->email)->send(new ConfirmacionReservaPasajero($emailDataPasajero));
-                    \Log::info('Email de confirmación enviado al pasajero: ' . $usuario->email);
-                }
+                $reservar ->save();
 
-            }
-
-        } catch (\Exception $e) {
-            \Log::error('Error al enviar emails: ' . $e->getMessage());
-            // No fallar la reserva si el email falla
-        }
-    }
+                return response()->json([
+                    "message" => "viaje reservado exitosamente",
+                    "data" => $reservar->load('usuario'),
+                ], 201);
+           }
 
     public function GetAll(Reservarviaje $reservarviaje){
         return response()->json([
@@ -139,6 +143,5 @@ class ReservarviajeController extends Controller
             "message" => "Reserva eliminada Exitosamente!"
         ], 200);
     }
-
 
 }
