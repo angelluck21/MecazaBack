@@ -1,61 +1,214 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🚗 Mecaza - Sistema de Gestión de Viajes
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sistema backend desarrollado en Laravel para la gestión de viajes, carros, reservas y usuarios.
 
-## About Laravel
+## 📋 Descripción
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Mecaza es una API REST que permite gestionar un sistema de transporte con las siguientes funcionalidades principales:
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **Gestión de Usuarios**: Registro, login, listado y administración de usuarios
+- **Gestión de Carros**: Administración de vehículos y sus estados
+- **Sistema de Reservas**: Creación y gestión de reservas de viajes
+- **Precios de Viajes**: Configuración y administración de tarifas
+- **Estados de Carros**: Control del estado operativo de los vehículos
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 🛠️ Tecnologías
 
-## Learning Laravel
+- **Framework**: Laravel 12.x
+- **PHP**: 8.2+
+- **Base de Datos**: SQL Server / MySQL / SQLite
+- **Autenticación**: Laravel Sanctum
+- **Generación de PDFs**: DomPDF
+- **HTTP Client**: Guzzle
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## 📁 Estructura del Proyecto
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+```
+app/
+├── Http/Controllers/     # Controladores de la API
+├── Mail/                # Clases de correo electrónico
+├── Models/              # Modelos Eloquent
+└── Providers/           # Proveedores de servicios
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+database/
+├── migrations/          # Migraciones de base de datos
+└── seeders/            # Datos de prueba
 
-## Laravel Sponsors
+routes/
+└── api.php             # Rutas de la API
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## 🚀 Instalación
 
-### Premium Partners
+### Requisitos Previos
+- PHP 8.2 o superior
+- Composer
+- Base de datos (SQL Server, MySQL o SQLite)
+- XAMPP (recomendado para desarrollo local)
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### Pasos de Instalación
 
-## Contributing
+1. **Clonar el repositorio**
+   ```bash
+   git clone [URL_DEL_REPOSITORIO]
+   cd MecazaBack-2
+   ```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+2. **Instalar dependencias**
+   ```bash
+   composer install
+   ```
 
-## Code of Conduct
+3. **Configurar variables de entorno**
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+4. **Configurar base de datos**
+   - Editar `.env` con las credenciales de tu base de datos
+   - Para SQL Server, usar la configuración en `config/database.php`
 
-## Security Vulnerabilities
+5. **Ejecutar migraciones**
+   ```bash
+   php artisan migrate
+   ```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+6. **Iniciar el servidor**
+   ```bash
+   php artisan serve
+   ```
 
-## License
+## 🔌 Endpoints de la API
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### Autenticación
+- `POST /api/registro` - Registro de usuarios
+- `POST /api/login` - Login de usuarios
+- `GET /api/user` - Información del usuario autenticado
+
+### Usuarios
+- `GET /api/listarusuario` - Listar usuarios
+- `GET /api/listarusuariotodo` - Listar todos los usuarios
+- `PUT /api/actualizarusuario/{user}` - Actualizar usuario
+- `DELETE /api/eliminarusuario/{user}` - Eliminar usuario
+
+### Carros
+- `POST /api/agregarcarros` - Agregar carro
+- `GET /api/listarcarro` - Listar carros
+- `PUT /api/actualizarcarro/{carro}` - Actualizar carro
+- `DELETE /api/eliminarcarro/{carro}` - Eliminar carro
+- `PUT /api/actualizarestadocarro/{carro}` - Actualizar estado del carro
+
+### Estados de Carros
+- `POST /api/agregarestados` - Agregar estado
+- `GET /api/listarestados` - Listar estados
+- `PUT /api/actualizarestados/{estado}` - Actualizar estado
+- `DELETE /api/eliminarestados/{estado}` - Eliminar estado
+
+### Precios de Viajes
+- `POST /api/agregarprecio` - Agregar precio
+- `GET /api/listarprecio` - Listar precios
+- `PUT /api/actualizarprecio/{precio}` - Actualizar precio
+- `DELETE /api/eliminarprecio/{precio}` - Eliminar precio
+
+### Reservas
+- `POST /api/agregarreserva` - Crear reserva
+- `GET /api/listarreserva` - Listar reservas
+- `PUT /api/actualizarreserva/{reserva}` - Actualizar reserva
+- `DELETE /api/eliminarreserva/{reserva}` - Eliminar reserva
+
+### Prueba
+- `GET /api/test` - Verificar funcionamiento de la API
+
+## 🗄️ Base de Datos
+
+El proyecto soporta múltiples motores de base de datos:
+
+- **SQL Server** (configurado por defecto)
+- **MySQL/MariaDB**
+- **SQLite**
+
+### Configuración de SQL Server
+```php
+'sqlsrv' => [
+    'driver' => 'sqlsrv',
+    'host' => env('DB_HOST', 'ANGELLUCK34\\SQLEXPRESS01'),
+    'port' => env('DB_PORT', '1433'),
+    'database' => env('DB_DATABASE', 'laravel'),
+    'username' => env('DB_USERNAME', 'ANGELLUCK34'),
+    'password' => env('DB_PASSWORD', '11'),
+    'charset' => env('DB_CHARSET', 'utf8'),
+    'encrypt' => env('DB_ENCRYPT', 'yes'),
+    'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
+]
+```
+
+## 📧 Sistema de Correos
+
+El proyecto incluye funcionalidades de envío de correos electrónicos:
+- Confirmación de reservas
+- Notificaciones a conductores
+
+## 🔒 Autenticación
+
+- **Laravel Sanctum** para autenticación API
+- Tokens de acceso para endpoints protegidos
+- Middleware de autenticación en rutas sensibles
+
+## 🧪 Testing
+
+```bash
+# Ejecutar tests
+php artisan test
+
+# Ejecutar tests con coverage
+php artisan test --coverage
+```
+
+## 📦 Comandos Útiles
+
+```bash
+# Desarrollo
+composer run dev
+
+# Limpiar cache
+php artisan config:clear
+php artisan cache:clear
+
+# Ver logs en tiempo real
+php artisan pail
+```
+
+## 🐳 Docker (Opcional)
+
+El proyecto incluye configuración Docker para despliegue:
+
+```bash
+docker-compose up -d
+```
+
+## 📝 Notas de Desarrollo
+
+- **XAMPP**: Recomendado para entorno de desarrollo local
+- **Base de datos**: Configurar según tu entorno (SQL Server por defecto)
+- **Variables de entorno**: Asegurarse de configurar correctamente `.env`
+
+## 🤝 Contribución
+
+1. Fork el proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
+
+## 📄 Licencia
+
+Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más detalles.
+
+## 📞 Soporte
+
+Para soporte técnico o preguntas sobre el proyecto, contacta al equipo de desarrollo.
+
+---
+
+**Mecaza** - Sistema de Gestión de Viajes 🚗✨
