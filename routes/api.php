@@ -34,6 +34,7 @@ Route::delete("/eliminarprecio/{precios}",[PrecioviajeController::class,"Destroy
 Route::post("/agregarreserva", [ReservarviajeController::class,"Create"]);
 Route::get("/listarreserva", [ReservarviajeController::class,"GetAll"]);
 Route::put("/actualizarreserva/{reservarviaje}", [ReservarviajeController::class,"Update"]);
+Route::put("/confirmarreserva/{reservarviaje}", [ReservarviajeController::class,"Confirmar"]);
 Route::delete("/eliminarreserva/{reservarviaje}",[ReservarviajeController::class,"Destroy"]);
 
 // Ruta de prueba para verificar que la API funciona

@@ -12,16 +12,15 @@ use App\Mail\NotificacionReservaConductor;
 
 class ReservarviajeController extends Controller
 {
-    /* public function Create(Request $request) {
+     public function Create(Request $request) {
          try {
              // Crear la reserva
              $reservar = new Reservarviaje();
              $reservar->nombre = $request->Nombre;
              $reservar->ubicacion = $request->Ubicacion;
-             $reservar->tel = $request->Telefono;
+             $reservar->tel = $request->user()->tel ?? $request->Telefono;
              $reservar->asiento = $request->Asiento;
              $reservar->id_users = $request->user()->id_users;
-             $reservar->tel = $request->user()->Telefono;
              $reservar->id_carros = $request->id_carros;
 
              $reservar->save();
@@ -34,18 +33,15 @@ class ReservarviajeController extends Controller
 
              if ($carro) {
                  // Obtener información del conductor
-                 $conductor = User::where('Nombre', $carro->conductor)
-                     ->orWhere('nombre', $carro->conductor)
-                     ->orWhere('name', $carro->conductor)
-                     ->first();
+                  $conductor = User::where('name', $carro->conductor)->first();
 
                  if ($conductor && $conductor->email) {
                      try {
                          // Preparar datos para el email
                          $emailData = [
                              'conductor' => $carro->conductor,
-                             'pasajero' => $request->user()->Nombre ?? $request->user()->nombre ?? 'No especificado',
-                             'telefono' => $request->user()->Telefono ?? 'No especificado',
+                              'pasajero' => $request->user()->name ?? 'No especificado',
+                              'telefono' => $request->user()->tel ?? 'No especificado',
                              'ubicacion' => $request->Ubicacion,
                              'asiento' => $request->Asiento,
                              'nombre' => $request->Nombre,
@@ -97,7 +93,7 @@ class ReservarviajeController extends Controller
              ], 500);
          }
      }
- */
+ /*
            public function Create(Request $request) {
                 $reservar = new Reservarviaje();
                 $reservar-> nombre =$request->Nombre;
@@ -114,10 +110,10 @@ class ReservarviajeController extends Controller
                     "data" => $reservar->load('usuario'),
                 ], 201);
            }
-
+*/
     public function GetAll(Reservarviaje $reservarviaje){
         return response()->json([
-            "data" => $reservarviaje->with('usuario')->get(),
+            "data" => $reservarviaje->with(['usuario', 'carro'])->get(),
             "message" => "Consulta de reserva exitosa"
         ],200);
     }
@@ -134,6 +130,16 @@ class ReservarviajeController extends Controller
         return response()->json([
             "message" => "Reserva actualizada exitosamente"
         ],200);
+    }
+
+    public function Confirmar(Reservarviaje $reservarviaje) {
+        $reservarviaje->estado = 'Confirmada';
+        $reservarviaje->save();
+
+        return response()->json([
+            "message" => "Reserva confirmada exitosamente",
+            "data" => $reservarviaje
+        ], 200);
     }
 
     public function Destroy(Reservarviaje $reservarviaje) {

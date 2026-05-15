@@ -100,9 +100,9 @@ class CarrosController extends Controller
         }
     }
 
-    public function GetAll(carros $request){
+    public function GetAll(Carros $request){
         return response()->json([
-            "data" => $request->get(),
+            "data" => $request->with('reservas')->get(),
             "message" => "Consulta de carros exitosa"
         ],200);
     }

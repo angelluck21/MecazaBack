@@ -12,6 +12,7 @@ class Reservarviaje extends Model
         'ubicacion',
         'tel',
         'asiento',
+        'estado',
         'id_users',
         'id_carros'
     ];
@@ -23,6 +24,6 @@ class Reservarviaje extends Model
 
     public function carro()
     {
-        return $this->belongsTo(User::class, 'id_carros');
+        return $this->belongsTo(Carros::class, 'id_carros');
     }
 }

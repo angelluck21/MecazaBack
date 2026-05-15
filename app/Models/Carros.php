@@ -29,4 +29,9 @@ class Carros extends Model
     {
         return $this-> belongsTo(User::class, 'id_user');
     }
+
+    public function reservas()
+    {
+        return $this->hasMany(Reservarviaje::class, 'id_carros');
+    }
 }
