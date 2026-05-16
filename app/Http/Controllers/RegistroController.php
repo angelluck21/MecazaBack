@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class RegistroController extends Controller
@@ -78,11 +79,25 @@ class RegistroController extends Controller
     {
         $data = [];
 
-        if ($request->filled('Nombre'))    $data['name']     = $request->Nombre;
-        if ($request->filled('Rol'))       $data['rol']      = $request->Rol;
-        if ($request->filled('Correo'))    $data['email']    = $request->Correo;
-        if ($request->filled('Telefono'))  $data['tel']      = $request->Telefono;
+        if ($request->filled('Nombre'))     $data['name']     = $request->Nombre;
+        if ($request->filled('Rol'))        $data['rol']      = $request->Rol;
+        if ($request->filled('Correo'))     $data['email']    = $request->Correo;
+        if ($request->filled('Telefono'))   $data['tel']      = $request->Telefono;
         if ($request->filled('Contrasena')) $data['password'] = Hash::make($request->Contrasena);
+
+        // Foto de perfil
+        if ($request->hasFile('fotoperfil')) {
+            // Eliminar foto anterior si existe
+            if ($user->fotoperfil) {
+                $oldPath = ltrim(str_replace('/storage', '', parse_url($user->fotoperfil, PHP_URL_PATH)), '/');
+                Storage::disk('public')->delete($oldPath);
+            }
+
+            $imagen       = $request->file('fotoperfil');
+            $nombreImagen = time() . '_' . uniqid() . '.' . $imagen->getClientOriginalExtension();
+            Storage::disk('public')->putFileAs('usuarios', $imagen, $nombreImagen);
+            $data['fotoperfil'] = Storage::url("usuarios/{$nombreImagen}");
+        }
 
         $user->update($data);
 
@@ -94,6 +109,12 @@ class RegistroController extends Controller
 
     public function Destroy(User $user)
     {
+        // Eliminar foto si existe
+        if ($user->fotoperfil) {
+            $oldPath = ltrim(str_replace('/storage', '', parse_url($user->fotoperfil, PHP_URL_PATH)), '/');
+            Storage::disk('public')->delete($oldPath);
+        }
+
         $user->delete();
 
         return response()->json([

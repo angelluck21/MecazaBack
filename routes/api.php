@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CarrosController;
 use App\Http\Controllers\GoogleAuthController;
+use App\Http\Controllers\InvitacionController;
 use App\Http\Controllers\RegistroController;
 use App\Http\Controllers\EstadosController;
 use App\Http\Controllers\PrecioviajeController;
@@ -13,6 +14,10 @@ use Illuminate\Support\Facades\Route;
 Route::post('/login',       [RegistroController::class,    'LoginUsuario']);
 Route::post('/registrar',   [RegistroController::class,    'Create']);
 Route::post('/auth/google', [GoogleAuthController::class,  'handleGoogleAuth']);
+
+// Invitación de conductores (públicas — el token es la seguridad)
+Route::get('/validar-invitacion/{token}',       [InvitacionController::class, 'ValidarToken']);
+Route::post('/registrar-conductor/{token}',     [InvitacionController::class, 'RegistrarConductor']);
 
 Route::get('/listarcarro',  [CarrosController::class,       'GetAll']);
 Route::get('/listarestados',[EstadosController::class,      'GetAll']);
@@ -26,10 +31,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', fn(Request $r) => $r->user());
 
     // Usuarios
-    Route::get('/listarusuarios',           [RegistroController::class, 'GetAll']);
-    Route::get('/verusuario/{user}',        [RegistroController::class, 'Show']);
-    Route::put('/actualizarusuario/{user}', [RegistroController::class, 'Update']);
-    Route::delete('/eliminarusuario/{user}',[RegistroController::class, 'Destroy']);
+    Route::get('/listarusuarios',            [RegistroController::class, 'GetAll']);
+    Route::get('/verusuario/{user}',         [RegistroController::class, 'Show']);
+    Route::put('/actualizarusuario/{user}',  [RegistroController::class, 'Update']);
+    Route::post('/actualizarusuario/{user}', [RegistroController::class, 'Update']); // para FormData con foto
+    Route::delete('/eliminarusuario/{user}', [RegistroController::class, 'Destroy']);
 
     // Carros
     Route::post('/crearcarro',                      [CarrosController::class, 'Create']);
@@ -46,6 +52,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/agregarprecio',                   [PrecioviajeController::class, 'Create']);
     Route::put('/actualizarprecio/{precio}',        [PrecioviajeController::class, 'Update']);
     Route::delete('/eliminarprecio/{precio}',       [PrecioviajeController::class, 'Destroy']);
+
+    // Invitación conductores (protegida — solo admin)
+    Route::post('/invitar-conductor', [InvitacionController::class, 'Invitar']);
 
     // Reservas
     Route::post('/crearreserva',                            [ReservarviajeController::class, 'Create']);

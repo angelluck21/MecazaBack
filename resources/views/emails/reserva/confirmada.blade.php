@@ -1,15 +1,31 @@
 @component('mail::message')
-# Tu Reserva ha sido Confirmada
 
-Hola, tu reserva ha sido confirmada exitosamente.
+@if(($data['estado'] ?? '') === 'Confirmada')
+# ¡Tu reserva fue confirmada! 🎉
+Hola **{{ $data['usuario_nombre'] ?? $data['origen'] ?? 'Pasajero' }}**, tu viaje está listo.
+@else
+# Tu reserva fue rechazada
+Hola **{{ $data['usuario_nombre'] ?? $data['origen'] ?? 'Pasajero' }}**, lamentablemente tu reserva no pudo ser aceptada.
+@endif
 
 @component('mail::table')
-| Campo     | Detalle |
-|:----------|:--------|
-| PNR       | {{ $data['pnr']    ?? '—' }} |
-| Origen    | {{ $data['origen'] ?? '—' }} |
+| Detalle        | Información |
+|:---------------|:------------|
+| Reserva #      | {{ $data['pnr'] ?? '—' }} |
+| Estado         | {{ $data['estado'] ?? '—' }} |
+| Conductor      | {{ $data['conductor'] ?? '—' }} |
+| Destino        | {{ $data['destino'] ?? '—' }} |
+| Fecha          | {{ $data['fecha'] ?? '—' }} |
+| Hora de salida | {{ $data['hora'] ?? '—' }} |
+| Asiento        | {{ $data['asiento'] ?? '—' }} |
+| Placa          | {{ $data['placa'] ?? '—' }} |
 @endcomponent
 
-Gracias por viajar con<br>
-{{ config('app.name') }}
+@if(($data['estado'] ?? '') === 'Confirmada')
+@component('mail::button', ['url' => '', 'color' => 'success'])
+Ver mis reservas
+@endcomponent
+@endif
+
+Gracias por viajar con **{{ config('app.name') }}**
 @endcomponent

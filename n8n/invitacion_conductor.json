@@ -1,0 +1,79 @@
+{
+  "name": "Mecaza – Invitación Conductor",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "mecaza-invitacion-conductor",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "mecaza-invitacion-conductor"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.body.email }}",
+        "subject": "Invitación para ser conductor en Mecaza",
+        "emailType": "html",
+        "message": "<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n<meta charset=\"UTF-8\" />\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n<title>Invitación Conductor Mecaza</title>\n</head>\n<body style=\"margin:0;padding:0;background:#0f172a;font-family:'Segoe UI',Arial,sans-serif\">\n<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#0f172a;padding:40px 0\">\n  <tr><td align=\"center\">\n    <table width=\"600\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:600px;width:100%;background:#1e293b;border-radius:20px;overflow:hidden\">\n      <tr>\n        <td style=\"background:linear-gradient(135deg,#1d4ed8,#7c3aed);padding:48px 40px;text-align:center\">\n          <div style=\"width:64px;height:64px;background:rgba(255,255,255,0.15);border-radius:16px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px\">\n            <span style=\"font-size:28px\">&#x1F697;</span>\n          </div>\n          <h1 style=\"color:#fff;font-size:26px;font-weight:800;margin:0 0 8px\">&#x00A1;Te invitamos a Mecaza!</h1>\n          <p style=\"color:#bfdbfe;font-size:14px;margin:0\">El administrador {{ $json.body.nombre_admin }} te ha invitado a unirte como conductor.</p>\n        </td>\n      </tr>\n      <tr>\n        <td style=\"padding:40px\">\n          <p style=\"color:#94a3b8;font-size:14px;line-height:1.7;margin:0 0 24px\">\n            Hola,<br/><br/>\n            Has sido seleccionado para formar parte del equipo de conductores de <strong style=\"color:#fff\">Mecaza</strong>. Para activar tu cuenta, haz clic en el bot&#x00F3;n a continuaci&#x00F3;n y completa tu registro.\n          </p>\n          <div style=\"text-align:center;margin:32px 0\">\n            <a href=\"{{ $json.body.link }}\" style=\"display:inline-block;background:linear-gradient(135deg,#1d4ed8,#7c3aed);color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:16px 40px;border-radius:12px;letter-spacing:0.3px\">\n              Crear mi cuenta de conductor\n            </a>\n          </div>\n          <div style=\"background:#0f172a;border-radius:12px;padding:20px;margin-bottom:24px\">\n            <p style=\"color:#94a3b8;font-size:12px;margin:0 0 8px;text-transform:uppercase;letter-spacing:1px\">Detalles del enlace</p>\n            <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\">\n              <tr>\n                <td style=\"color:#64748b;font-size:13px;padding:6px 0\">Correo asignado</td>\n                <td style=\"color:#e2e8f0;font-size:13px;text-align:right\">{{ $json.body.email }}</td>\n              </tr>\n              <tr>\n                <td style=\"color:#64748b;font-size:13px;padding:6px 0\">V&#x00E1;lido por</td>\n                <td style=\"color:#e2e8f0;font-size:13px;text-align:right\">{{ $json.body.expires_en }}</td>\n              </tr>\n              <tr>\n                <td style=\"color:#64748b;font-size:13px;padding:6px 0\">Uso</td>\n                <td style=\"color:#e2e8f0;font-size:13px;text-align:right\">Un solo uso</td>\n              </tr>\n            </table>\n          </div>\n          <p style=\"color:#64748b;font-size:12px;line-height:1.6;margin:0\">\n            Si no reconoces esta invitaci&#x00F3;n, puedes ignorar este correo con seguridad. El enlace expirar&#x00E1; autom&#x00E1;ticamente.\n          </p>\n        </td>\n      </tr>\n      <tr>\n        <td style=\"background:#0f172a;padding:24px 40px;text-align:center;border-top:1px solid #334155\">\n          <p style=\"color:#475569;font-size:12px;margin:0\">\n            &#x00A9; 2024 Mecaza &#xB7; Servicio de transporte intermunicipal<br/>\n            <span style=\"color:#334155\">Este es un correo autom&#x00E1;tico, no respondas a este mensaje.</span>\n          </p>\n        </td>\n      </tr>\n    </table>\n  </td></tr>\n</table>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "send-gmail",
+      "name": "Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [480, 300],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE_WITH_YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Mecaza Gmail"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"ok\": true }",
+        "options": {}
+      },
+      "id": "respond",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [720, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

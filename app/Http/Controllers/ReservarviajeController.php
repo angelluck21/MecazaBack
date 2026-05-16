@@ -6,9 +6,11 @@ use App\Models\Reservarviaje;
 use App\Models\Carros;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\NotificacionReservaConductor;
+use App\Mail\CorreoReservaConfirmada;
 
 class ReservarviajeController extends Controller
 {
@@ -40,7 +42,7 @@ class ReservarviajeController extends Controller
                         Mail::to($conductor->email)->send(new NotificacionReservaConductor([
                             'conductor'    => $carro->conductor,
                             'pasajero'     => $request->user()->name ?? 'No especificado',
-                            'telefono'     => $request->user()->tel ?? 'No especificado',
+                            'telefono'     => $request->user()->tel  ?? 'No especificado',
                             'ubicacion'    => $request->Ubicacion,
                             'asiento'      => $request->Asiento,
                             'nombre'       => $request->Nombre,
@@ -102,6 +104,47 @@ class ReservarviajeController extends Controller
 
         $reservarviaje->estado = $request->estado;
         $reservarviaje->save();
+
+        // Cargar usuario y carro relacionados
+        $usuario = User::find($reservarviaje->id_users);
+        $carro   = Carros::find($reservarviaje->id_carros);
+
+        if ($usuario && $carro) {
+            $datosNotificacion = [
+                'pnr'            => $reservarviaje->id_reservarviajes,
+                'origen'         => $usuario->name,
+                'estado'         => $request->estado,
+                'conductor'      => $carro->conductor,
+                'destino'        => $carro->destino,
+                'fecha'          => $carro->fecha,
+                'hora'           => $carro->horasalida,
+                'asiento'        => $reservarviaje->asiento,
+                'placa'          => $carro->placa,
+                'usuario_nombre' => $usuario->name,
+                'usuario_email'  => $usuario->email,
+                'usuario_tel'    => $usuario->tel ?? '',
+            ];
+
+            // Email al usuario
+            try {
+                Mail::to($usuario->email)->send(new CorreoReservaConfirmada($datosNotificacion));
+            } catch (\Exception $e) {
+                Log::error('Error al enviar email de confirmación al usuario', [
+                    'error'         => $e->getMessage(),
+                    'usuario_email' => $usuario->email,
+                ]);
+            }
+
+            // Webhook a N8N para WhatsApp + notificaciones adicionales
+            $webhookUrl = env('N8N_WEBHOOK_URL');
+            if ($webhookUrl) {
+                try {
+                    Http::timeout(5)->post($webhookUrl, $datosNotificacion);
+                } catch (\Exception $e) {
+                    Log::error('Error al llamar webhook N8N', ['error' => $e->getMessage()]);
+                }
+            }
+        }
 
         return response()->json([
             'message' => 'Reserva actualizada exitosamente',
