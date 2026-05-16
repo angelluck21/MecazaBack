@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CarrosController;
+use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\RegistroController;
 use App\Http\Controllers\EstadosController;
 use App\Http\Controllers\PrecioviajeController;
@@ -9,8 +10,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
-Route::post('/login',     [RegistroController::class, 'LoginUsuario']);
-Route::post('/registrar', [RegistroController::class, 'Create']);
+Route::post('/login',         [RegistroController::class,   'LoginUsuario']);
+Route::post('/registrar',     [RegistroController::class,   'Create']);
+Route::post('/auth/google',   [GoogleAuthController::class, 'handleGoogleAuth']);
 
 // ── Usuarios ──────────────────────────────────────────────────────────────────
 Route::get('/listarusuarios',           [RegistroController::class, 'GetAll']);
