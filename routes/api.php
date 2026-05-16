@@ -8,45 +8,50 @@ use App\Http\Controllers\ReservarviajeController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/registro', [RegistroController::class, 'Create']);
-Route::get("/listarusuario", [RegistroController::class,"GetAll"]);
-Route::get("/listarusuariotodo", [RegistroController::class,"traerUsuario"]);
-Route::put("/actualizarusuario/{user}", [RegistroController::class,"Update"]);
-Route::delete("/eliminarusuario/{user}",[RegistroController::class,"Destroy"]);
-Route::post("/login", [RegistroController::class, "LoginUsuario"]);      //////
+// ── Auth ──────────────────────────────────────────────────────────────────────
+Route::post('/login',     [RegistroController::class, 'LoginUsuario']);
+Route::post('/registrar', [RegistroController::class, 'Create']);
 
-Route::post('/agregarcarros', [CarrosController::class, 'Create']);
-Route::get("/listarcarro", [CarrosController::class,"GetAll"]);
-Route::put("/actualizarcarro/{agregarcarros}", [CarrosController::class,"Update"]);
-Route::delete("/eliminarcarro/{agregarcarros}",[CarrosController::class,"Destroy"]);
-Route::put("/actualizarestadocarro/{carro}", [CarrosController::class,"UpdateEstado"]); /////
+// ── Usuarios ──────────────────────────────────────────────────────────────────
+Route::get('/listarusuarios',           [RegistroController::class, 'GetAll']);
+Route::get('/verusuario/{user}',        [RegistroController::class, 'Show']);
+Route::put('/actualizarusuario/{user}', [RegistroController::class, 'Update']);
+Route::delete('/eliminarusuario/{user}',[RegistroController::class, 'Destroy']);
 
-Route::post("/agregarestados",[EstadosController::class,"Create"]);
-Route::get("/listarestados", [EstadosController::class,"GetAll"]);
-Route::put("/actualizarestados/{updateestado}", [EstadosController::class,"Update"]);
-Route::delete("/eliminarestados/{estadoscarro}",[EstadosController::class,"Destroy"]);
+// ── Carros ────────────────────────────────────────────────────────────────────
+Route::get('/listarcarro',                      [CarrosController::class, 'GetAll']);
+Route::post('/crearcarro',                      [CarrosController::class, 'Create']);
+Route::put('/actualizarcarro/{carro}',          [CarrosController::class, 'Update']);
+Route::put('/actualizarestado/{carro}',         [CarrosController::class, 'UpdateEstado']);
+Route::delete('/eliminarcarro/{carro}',         [CarrosController::class, 'Destroy']);
 
-Route::post("/agregarprecio",[PrecioviajeController::class,"Create"]);
-Route::get("/listarprecio", [PrecioviajeController::class,"GetAll"]);
-Route::put("/actualizarprecio/{precios}", [PrecioviajeController::class,"Update"]);
-Route::delete("/eliminarprecio/{precios}",[PrecioviajeController::class,"Destroy"]);
+// ── Estados ───────────────────────────────────────────────────────────────────
+Route::get('/listarestados',                    [EstadosController::class, 'GetAll']);
+Route::post('/agregarestados',                  [EstadosController::class, 'Create']);
+Route::put('/actualizarestados/{estado}',       [EstadosController::class, 'Update']);
+Route::delete('/eliminarestados/{estado}',      [EstadosController::class, 'Destroy']);
 
-Route::post("/agregarreserva", [ReservarviajeController::class,"Create"]);
-Route::get("/listarreserva", [ReservarviajeController::class,"GetAll"]);
-Route::put("/actualizarreserva/{reservarviaje}", [ReservarviajeController::class,"Update"]);
-Route::put("/confirmarreserva/{reservarviaje}", [ReservarviajeController::class,"Confirmar"]);
-Route::delete("/eliminarreserva/{reservarviaje}",[ReservarviajeController::class,"Destroy"]);
+// ── Precios ───────────────────────────────────────────────────────────────────
+Route::get('/listarprecios',                    [PrecioviajeController::class, 'GetAll']);
+Route::post('/agregarprecio',                   [PrecioviajeController::class, 'Create']);
+Route::put('/actualizarprecio/{precio}',        [PrecioviajeController::class, 'Update']);
+Route::delete('/eliminarprecio/{precio}',       [PrecioviajeController::class, 'Destroy']);
 
-// Ruta de prueba para verificar que la API funciona
-Route::get('/test', function () {
-    return response()->json([
-        'success' => true,
-        'mensaje' => 'API de Mecaza funcionando correctamente',
-        'timestamp' => now(),
-        'version' => '1.0.0'
-    ]);
+// ── Reservas (requieren token) ────────────────────────────────────────────────
+Route::get('/listarreserva',                            [ReservarviajeController::class, 'GetAll']);
+Route::delete('/eliminarreserva/{reservarviaje}',       [ReservarviajeController::class, 'Destroy']);
+Route::put('/actualizarreserva/{reservarviaje}',        [ReservarviajeController::class, 'Update']);
+Route::put('/confirmarreserva/{reservarviaje}',         [ReservarviajeController::class, 'Confirmar']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/crearreserva', [ReservarviajeController::class, 'Create']);
+    Route::get('/user',          fn(Request $r) => $r->user());
 });
-Route::post("/agregarreserva",[ReservarviajeController::class,"Create"])->middleware('auth:sanctum');
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
+
+// ── Ruta de prueba ────────────────────────────────────────────────────────────
+Route::get('/test', fn() => response()->json([
+    'success'   => true,
+    'mensaje'   => 'API de Mecaza funcionando correctamente',
+    'timestamp' => now(),
+    'version'   => '1.0.0',
+]));

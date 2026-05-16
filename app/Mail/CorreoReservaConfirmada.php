@@ -3,7 +3,6 @@
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
@@ -14,46 +13,30 @@ class CorreoReservaConfirmada extends Mailable
     use Queueable, SerializesModels;
 
     public array $data;
-    /**
-     * Create a new message instance.
-     */
+
     public function __construct(array $data)
     {
         $this->data = $data;
     }
 
-    public function build()
-    {
-        return $this->subjet("Tu reserva" . $this->data['pnr']) . " - " . $this->data['origen']
-                    ->markdoown('emails.reserva.confirmada')
-                    ->with('data', $this->data);
-    }
-
-    /**
-     * Get the message envelope.
-     */
     public function envelope(): Envelope
     {
+        $pnr    = $this->data['pnr']    ?? '';
+        $origen = $this->data['origen'] ?? '';
+
         return new Envelope(
-            subject: 'Correo Reserva Confirmada',
+            subject: "Tu reserva {$pnr} — {$origen}",
         );
     }
 
-    /**
-     * Get the message content definition.
-     */
     public function content(): Content
     {
         return new Content(
-            markdown: 'email.reserva.confirmada',
+            markdown: 'emails.reserva.confirmada',
+            with: ['data' => $this->data],
         );
     }
 
-    /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
-     */
     public function attachments(): array
     {
         return [];

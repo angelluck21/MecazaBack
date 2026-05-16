@@ -7,6 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 class Carros extends Model
 {
     protected $primaryKey = 'id_carros';
+
+    protected $casts = [
+        'asientos' => 'integer',
+    ];
+
     protected $fillable = [
         'conductor',
         'imagencarro',
@@ -25,9 +30,9 @@ class Carros extends Model
         return $this->belongsTo(Estadoscarro::class, 'id_estados');
     }
 
-    public function conductor()
+    public function conductorUsuario()
     {
-        return $this-> belongsTo(User::class, 'id_user');
+        return $this->belongsTo(User::class, 'id_users');
     }
 
     public function reservas()
