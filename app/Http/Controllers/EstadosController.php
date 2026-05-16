@@ -7,37 +7,42 @@ use Illuminate\Http\Request;
 
 class EstadosController extends Controller
 {
-    public function Create(Request $request) {
-        Estadoscarro::create([
-            "estados" => $request->Estados,
-        ]);
+    public function Create(Request $request)
+    {
+        $request->validate(['Estados' => 'required|string|max:100']);
+
+        Estadoscarro::create(['estados' => $request->Estados]);
 
         return response()->json([
-            "message" => "Estado guardado exitosamente"
+            'message' => 'Estado guardado exitosamente',
         ], 201);
     }
 
-    public function Update(Request $request, Estadoscarro $updateestado){
-        $updateestado->update([
-            "estados" => $request->Estados,
-        ]);
+    public function GetAll()
+    {
         return response()->json([
-            "message" => "Actualizado exitosamente"
-        ],200);
+            'data'    => Estadoscarro::all(),
+            'message' => 'Consulta de estados exitosa',
+        ], 200);
     }
 
-    public function GetAll(Estadoscarro $request){
+    public function Update(Request $request, Estadoscarro $estado)
+    {
+        $request->validate(['Estados' => 'required|string|max:100']);
+
+        $estado->update(['estados' => $request->Estados]);
+
         return response()->json([
-            "data" => $request->get(),
-            "message" => "Consulta de carros exitosa"
-        ],200);
+            'message' => 'Estado actualizado exitosamente',
+        ], 200);
     }
 
-    public function Destroy(Estadoscarro $estadoscarro) {
-        $estadoscarro->delete();
+    public function Destroy(Estadoscarro $estado)
+    {
+        $estado->delete();
 
         return response()->json([
-            "message" => "Estado eliminado Exitosamente!"
+            'message' => 'Estado eliminado exitosamente',
         ], 200);
     }
 }
