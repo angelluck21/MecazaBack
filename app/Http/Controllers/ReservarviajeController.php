@@ -62,6 +62,26 @@ class ReservarviajeController extends Controller
                 }
             }
 
+            // Webhook a N8N para WhatsApp al usuario
+            $webhookReserva = env('N8N_WEBHOOK_RESERVA');
+            if ($webhookReserva && $carro) {
+                try {
+                    Http::timeout(5)->post($webhookReserva, [
+                        'usuario_nombre' => $request->user()->name ?? 'Pasajero',
+                        'usuario_tel'    => $request->user()->tel ?? '',
+                        'ubicacion'      => $request->Ubicacion,
+                        'asiento'        => $request->Asiento,
+                        'conductor'      => $carro->conductor ?? '',
+                        'destino'        => $carro->destino ?? '',
+                        'fecha'          => $carro->fecha ?? '',
+                        'hora'           => $carro->horasalida ?? '',
+                        'placa'          => $carro->placa ?? '',
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Error al llamar webhook N8N reserva', ['error' => $e->getMessage()]);
+                }
+            }
+
             return response()->json([
                 'message' => 'Viaje reservado exitosamente',
                 'data'    => $reservar->load('usuario'),
