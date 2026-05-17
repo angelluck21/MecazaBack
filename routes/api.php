@@ -7,6 +7,8 @@ use App\Http\Controllers\RegistroController;
 use App\Http\Controllers\EstadosController;
 use App\Http\Controllers\PrecioviajeController;
 use App\Http\Controllers\ReservarviajeController;
+use App\Http\Controllers\MotivosCancelacionController;
+use App\Http\Controllers\FacturasController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -61,6 +63,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/actualizarreserva/{reservarviaje}',        [ReservarviajeController::class, 'Update']);
     Route::put('/confirmarreserva/{reservarviaje}',         [ReservarviajeController::class, 'Confirmar']);
     Route::delete('/eliminarreserva/{reservarviaje}',       [ReservarviajeController::class, 'Destroy']);
+
+    // Motivos de cancelación
+    Route::post('/guardarMotivoCancelacion',                [MotivosCancelacionController::class, 'Create']);
+    Route::get('/motivosCancelacion/{id_reservarviajes}',   [MotivosCancelacionController::class, 'GetByReserva']);
+    Route::get('/listarMotivos',                            [MotivosCancelacionController::class, 'GetAll']);
+
+    // Facturas
+    Route::post('/generarFactura/{id_reservarviajes}',      [FacturasController::class, 'GenerarFactura']);
+    Route::get('/facturaReserva/{id_reservarviajes}',       [FacturasController::class, 'GetByReserva']);
+    Route::get('/descargarFactura/{id_factura}',            [FacturasController::class, 'DescargarFactura']);
+    Route::get('/misFacturas',                              [FacturasController::class, 'GetByUsuario']);
+    Route::get('/listarFacturas',                           [FacturasController::class, 'GetAll']);
 });
 
 // ── Ruta de prueba ────────────────────────────────────────────────────────────

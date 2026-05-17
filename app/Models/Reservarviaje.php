@@ -26,4 +26,14 @@ class Reservarviaje extends Model
     {
         return $this->belongsTo(Carros::class, 'id_carros');
     }
+
+    public function motivos()
+    {
+        return $this->hasMany(MotivosCancelacion::class, 'id_reservarviajes');
+    }
+
+    public function factura()
+    {
+        return $this->hasOne(Faturaviaje::class, 'id_reservarviajes');
+    }
 }

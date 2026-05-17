@@ -119,11 +119,33 @@ class ReservarviajeController extends Controller
     public function Confirmar(Request $request, Reservarviaje $reservarviaje)
     {
         $request->validate([
-            'estado' => 'required|string|in:Confirmada,rechazada,cancelada',
+            'estado' => 'required|string|in:Confirmada,confirmada,rechazada,cancelada',
+            'motivo' => 'nullable|string|max:1000',
         ]);
 
-        $reservarviaje->estado = $request->estado;
+        $oldEstado = $reservarviaje->estado;
+        $newEstado = $request->estado;
+
+        $reservarviaje->estado = $newEstado;
         $reservarviaje->save();
+
+        if ($request->filled('motivo')) {
+            $tipo = 'usuario';
+            if ($request->user()->rol === 'conductor') $tipo = 'conductor';
+            if ($request->user()->rol === 'admin' || $request->user()->rol === 'administrador') $tipo = 'admin';
+
+            \App\Models\MotivosCancelacion::create([
+                'id_reservarviajes' => $reservarviaje->id_reservarviajes,
+                'id_users' => $request->user()->id_users,
+                'motivo' => $request->motivo,
+                'tipo' => $tipo,
+            ]);
+
+            $reservarviaje->motivo_cancelacion = $request->motivo;
+            $reservarviaje->cancelado_por = $tipo;
+            $reservarviaje->fecha_cancelacion = now();
+            $reservarviaje->save();
+        }
 
         // Cargar usuario y carro relacionados
         $usuario = User::find($reservarviaje->id_users);
@@ -133,7 +155,8 @@ class ReservarviajeController extends Controller
             $datosNotificacion = [
                 'pnr'            => $reservarviaje->id_reservarviajes,
                 'origen'         => $usuario->name,
-                'estado'         => $request->estado,
+                'estado'         => $newEstado,
+                'motivo'         => $request->motivo ?? 'Sin especificar',
                 'conductor'      => $carro->conductor,
                 'destino'        => $carro->destino,
                 'fecha'          => $carro->fecha,
