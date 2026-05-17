@@ -8,7 +8,7 @@ use App\Models\Carros;
 use App\Models\Precioviajes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use PDF;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class FacturasController extends Controller
 {
@@ -68,12 +68,12 @@ class FacturasController extends Controller
                 'factura' => $factura,
                 'usuario' => $usuario,
                 'reserva' => $reserva,
-                'carro' => $carro,
+                'carro'   => $carro,
             ])->render();
 
-            $pdf = PDF::loadHTML($html)
+            $pdf = Pdf::loadHTML($html)
                 ->setPaper('a4')
-                ->setOption(['dpi' => 150, 'defaultFont' => 'sans-serif']);
+                ->setOptions(['dpi' => 150, 'defaultFont' => 'sans-serif', 'isHtml5ParserEnabled' => true]);
 
             return $pdf->download("factura-{$factura->numero_factura}.pdf");
         } catch (\Exception $e) {
@@ -111,10 +111,10 @@ class FacturasController extends Controller
         }
     }
 
-    public function GetByUsuario($id_users)
+    public function GetByUsuario(Request $request)
     {
         try {
-            $facturas = Faturaviaje::where('id_users', $id_users)
+            $facturas = Faturaviaje::where('id_users', $request->user()->id_users)
                 ->with(['usuario', 'carro', 'reserva'])
                 ->orderBy('created_at', 'desc')
                 ->get();

@@ -14,7 +14,9 @@ class Reservarviaje extends Model
         'asiento',
         'estado',
         'id_users',
-        'id_carros'
+        'id_carros',
+        'calificacion',
+        'comentario_calificacion',
     ];
 
     public function usuario()

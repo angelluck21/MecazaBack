@@ -8,6 +8,12 @@ class Faturaviaje extends Model
 {
     protected $table = 'Factura';
     protected $primaryKey = 'id_factura';
+    protected $casts = [
+        'fecha_emision' => 'datetime',
+        'subtotal'      => 'float',
+        'impuesto'      => 'float',
+        'total'         => 'float',
+    ];
     protected $fillable = [
         'id_factura',
         'id_users',

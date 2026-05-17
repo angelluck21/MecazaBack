@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Reservarviaje;
 use App\Models\Carros;
 use App\Models\User;
+use App\Models\Faturaviaje;
+use App\Models\Precioviajes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -62,20 +64,27 @@ class ReservarviajeController extends Controller
                 }
             }
 
-            // Webhook a N8N para WhatsApp al usuario
+            // Webhook a N8N — notificación al conductor + WhatsApp
             $webhookReserva = env('N8N_WEBHOOK_RESERVA');
             if ($webhookReserva && $carro) {
+                $conductorUser = User::where('name', $carro->conductor)->first();
                 try {
                     Http::timeout(5)->post($webhookReserva, [
-                        'usuario_nombre' => $request->user()->name ?? 'Pasajero',
-                        'usuario_tel'    => $request->user()->tel ?? '',
-                        'ubicacion'      => $request->Ubicacion,
-                        'asiento'        => $request->Asiento,
-                        'conductor'      => $carro->conductor ?? '',
-                        'destino'        => $carro->destino ?? '',
-                        'fecha'          => $carro->fecha ?? '',
-                        'hora'           => $carro->horasalida ?? '',
-                        'placa'          => $carro->placa ?? '',
+                        'conductor'         => $carro->conductor ?? '',
+                        'conductor_email'   => $conductorUser?->email ?? '',
+                        'conductor_tel'     => $carro->telefono ?? '',
+                        'pasajero_nombre'   => $request->user()->name ?? $request->Nombre ?? 'Pasajero',
+                        'pasajero_tel'      => $request->user()->tel ?? $request->Telefono ?? '',
+                        'pasajero_email'    => $request->user()->email ?? '',
+                        'ubicacion'         => $request->Ubicacion,
+                        'asiento'           => $request->Asiento,
+                        'origen'            => $carro->origen ?? '',
+                        'destino'           => $carro->destino ?? '',
+                        'fecha'             => $carro->fecha ?? '',
+                        'hora'              => $carro->horasalida ?? '',
+                        'placa'             => $carro->placa ?? '',
+                        'reserva_id'        => $reservar->id_reservarviajes ?? '',
+                        'fecha_reserva'     => $reservar->created_at?->format('d/m/Y H:i') ?? now()->format('d/m/Y H:i'),
                     ]);
                 } catch (\Exception $e) {
                     Log::error('Error al llamar webhook N8N reserva', ['error' => $e->getMessage()]);
@@ -152,39 +161,49 @@ class ReservarviajeController extends Controller
         $carro   = Carros::find($reservarviaje->id_carros);
 
         if ($usuario && $carro) {
-            $datosNotificacion = [
-                'pnr'            => $reservarviaje->id_reservarviajes,
-                'origen'         => $usuario->name,
-                'estado'         => $newEstado,
-                'motivo'         => $request->motivo ?? 'Sin especificar',
-                'conductor'      => $carro->conductor,
-                'destino'        => $carro->destino,
-                'fecha'          => $carro->fecha,
-                'hora'           => $carro->horasalida,
-                'asiento'        => $reservarviaje->asiento,
-                'placa'          => $carro->placa,
-                'usuario_nombre' => $usuario->name,
-                'usuario_email'  => $usuario->email,
-                'usuario_tel'    => $usuario->tel ?? '',
-            ];
-
-            // Email al usuario
-            try {
-                Mail::to($usuario->email)->send(new CorreoReservaConfirmada($datosNotificacion));
-            } catch (\Exception $e) {
-                Log::error('Error al enviar email de confirmación al usuario', [
-                    'error'         => $e->getMessage(),
-                    'usuario_email' => $usuario->email,
-                ]);
+            // Generar factura automáticamente si se confirma
+            if (strtolower($newEstado) === 'confirmada') {
+                try {
+                    $precio   = Precioviajes::first();
+                    $subtotal = (float)($precio?->valor ?? 50000);
+                    $impuesto = $subtotal * 0.19;
+                    Faturaviaje::create([
+                        'id_users'          => $reservarviaje->id_users,
+                        'id_carros'         => $reservarviaje->id_carros,
+                        'id_precioviajes'   => $precio?->id_precioviajes ?? 1,
+                        'id_reservarviajes' => $reservarviaje->id_reservarviajes,
+                        'destino'           => $carro->destino ?? '',
+                        'subtotal'          => $subtotal,
+                        'impuesto'          => $impuesto,
+                        'total'             => $subtotal + $impuesto,
+                        'numero_factura'    => 'FAC-' . now()->format('YmdHis') . '-' . $reservarviaje->id_reservarviajes,
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Error al generar factura automática', ['error' => $e->getMessage()]);
+                }
             }
 
-            // Webhook a N8N para WhatsApp + notificaciones adicionales
-            $webhookUrl = env('N8N_WEBHOOK_URL');
-            if ($webhookUrl) {
+            // Webhook N8N — notificación al pasajero (confirmación o rechazo)
+            $webhookConfirmacion = env('N8N_WEBHOOK_CONFIRMACION');
+            if ($webhookConfirmacion) {
                 try {
-                    Http::timeout(5)->post($webhookUrl, $datosNotificacion);
+                    Http::timeout(5)->post($webhookConfirmacion, [
+                        'pasajero_nombre' => $usuario->name,
+                        'pasajero_email'  => $usuario->email,
+                        'pasajero_tel'    => $usuario->tel ?? '',
+                        'estado'          => $newEstado,
+                        'conductor'       => $carro->conductor ?? '',
+                        'placa'           => $carro->placa ?? '',
+                        'origen'          => $carro->origen ?? '',
+                        'destino'         => $carro->destino ?? '',
+                        'fecha'           => $carro->fecha ?? '',
+                        'hora'            => $carro->horasalida ?? '',
+                        'asiento'         => $reservarviaje->asiento,
+                        'reserva_id'      => $reservarviaje->id_reservarviajes,
+                        'motivo'          => $request->motivo ?? '',
+                    ]);
                 } catch (\Exception $e) {
-                    Log::error('Error al llamar webhook N8N', ['error' => $e->getMessage()]);
+                    Log::error('Error al llamar webhook N8N confirmacion', ['error' => $e->getMessage()]);
                 }
             }
         }
@@ -201,6 +220,31 @@ class ReservarviajeController extends Controller
 
         return response()->json([
             'message' => 'Reserva eliminada exitosamente',
+        ], 200);
+    }
+
+    public function Calificar(Request $request, Reservarviaje $reservarviaje)
+    {
+        $request->validate([
+            'calificacion' => 'required|integer|min:1|max:5',
+            'comentario'   => 'nullable|string|max:500',
+        ]);
+
+        if (strtolower($reservarviaje->estado) !== 'completada') {
+            return response()->json(['message' => 'Solo puedes calificar viajes completados.'], 400);
+        }
+
+        if ($reservarviaje->calificacion !== null) {
+            return response()->json(['message' => 'Ya calificaste este viaje.'], 400);
+        }
+
+        $reservarviaje->calificacion            = $request->calificacion;
+        $reservarviaje->comentario_calificacion = $request->comentario;
+        $reservarviaje->save();
+
+        return response()->json([
+            'message' => '¡Calificación registrada. Gracias!',
+            'data'    => $reservarviaje,
         ], 200);
     }
 }

@@ -62,6 +62,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/crearreserva',                            [ReservarviajeController::class, 'Create']);
     Route::put('/actualizarreserva/{reservarviaje}',        [ReservarviajeController::class, 'Update']);
     Route::put('/confirmarreserva/{reservarviaje}',         [ReservarviajeController::class, 'Confirmar']);
+    Route::put('/calificarreserva/{reservarviaje}',         [ReservarviajeController::class, 'Calificar']);
     Route::delete('/eliminarreserva/{reservarviaje}',       [ReservarviajeController::class, 'Destroy']);
 
     // Motivos de cancelación
