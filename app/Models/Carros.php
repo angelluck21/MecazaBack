@@ -18,6 +18,7 @@ class Carros extends Model
         'telefono',
         'placa',
         'asientos',
+        'origen',
         'destino',
         'horasalida',
         'fecha',

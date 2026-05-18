@@ -111,7 +111,7 @@
         </div>
         <div class="row">
             <span class="row-label">Origen:</span>
-            <span class="row-value">{{ $carro->origen ?? '—' }}</span>
+            <span class="row-value">{{ $factura->origen ?? $carro->origen ?? '—' }}</span>
         </div>
         <div class="row">
             <span class="row-label">Destino:</span>
@@ -145,7 +145,7 @@
             </thead>
             <tbody>
                 <tr>
-                    <td>Pasaje compartido — {{ $carro->origen ?? '' }} → {{ $factura->destino ?? $carro->destino ?? '' }}</td>
+                    <td>Pasaje compartido — {{ $factura->origen ?? $carro->origen ?? '' }} → {{ $factura->destino ?? $carro->destino ?? '' }}</td>
                     <td class="td-right">${{ number_format($factura->subtotal, 0, ',', '.') }}</td>
                 </tr>
             </tbody>

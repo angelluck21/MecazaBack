@@ -23,24 +23,25 @@ class FacturasController extends Controller
                 ], 400);
             }
 
-            $carro = Carros::findOrFail($reserva->id_carros);
-            $precio = Precioviajes::first() ?? (object)['valor' => 0];
+            $carro  = Carros::findOrFail($reserva->id_carros);
+            $precio = Precioviajes::first();
 
-            $subtotal = (float)($precio->valor ?? 50000);
-            $impuesto = $subtotal * 0.19;
-            $total = $subtotal + $impuesto;
+            $subtotal       = Precioviajes::getPrecioParaRuta($carro->origen ?? null, $carro->destino ?? null);
+            $impuesto       = $subtotal * 0.19;
+            $total          = $subtotal + $impuesto;
             $numero_factura = 'FAC-' . date('YmdHis') . '-' . $id_reservarviajes;
 
             $factura = Faturaviaje::create([
-                'id_users' => $reserva->id_users,
-                'id_carros' => $reserva->id_carros,
-                'id_precioviajes' => $precio->id_precioviajes ?? 1,
+                'id_users'          => $reserva->id_users,
+                'id_carros'         => $reserva->id_carros,
+                'id_precioviajes'   => $precio?->id_precioviajes ?? 1,
                 'id_reservarviajes' => $id_reservarviajes,
-                'destino' => $carro->destino,
-                'subtotal' => $subtotal,
-                'impuesto' => $impuesto,
-                'total' => $total,
-                'numero_factura' => $numero_factura,
+                'origen'            => $carro->origen ?? '',
+                'destino'           => $carro->destino ?? '',
+                'subtotal'          => $subtotal,
+                'impuesto'          => $impuesto,
+                'total'             => $total,
+                'numero_factura'    => $numero_factura,
             ]);
 
             return response()->json([

@@ -20,6 +20,7 @@ class Faturaviaje extends Model
         'id_carros',
         'id_precioviajes',
         'id_reservarviajes',
+        'origen',
         'destino',
         'subtotal',
         'impuesto',

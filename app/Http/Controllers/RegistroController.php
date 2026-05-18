@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Carros;
+use App\Models\Reservarviaje;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -105,6 +107,49 @@ class RegistroController extends Controller
             'message' => 'Usuario actualizado exitosamente',
             'user'    => $user->fresh(),
         ], 200);
+    }
+
+    public function PerfilConductor($id_users)
+    {
+        $user = User::find($id_users);
+        if (!$user) {
+            return response()->json(['message' => 'Conductor no encontrado'], 404);
+        }
+
+        $carrosIds = Carros::where('id_users', $id_users)->pluck('id_carros');
+
+        $reservas = Reservarviaje::whereIn('id_carros', $carrosIds)
+            ->where('estado', 'completada')
+            ->get();
+
+        $totalViajes      = $reservas->count();
+        $conCalificacion  = $reservas->filter(fn($r) => $r->calificacion !== null);
+        $promedio         = $conCalificacion->count() > 0
+            ? round($conCalificacion->avg('calificacion'), 1)
+            : null;
+
+        $resenas = $reservas
+            ->filter(fn($r) => $r->calificacion !== null && $r->comentario_calificacion)
+            ->sortByDesc('updated_at')
+            ->take(5)
+            ->values()
+            ->map(fn($r) => [
+                'calificacion' => $r->calificacion,
+                'comentario'   => $r->comentario_calificacion,
+                'fecha'        => $r->updated_at?->format('d/m/Y') ?? '',
+            ]);
+
+        return response()->json([
+            'data' => [
+                'id_users'             => $user->id_users,
+                'nombre'               => $user->name,
+                'fotoperfil'           => $user->fotoperfil,
+                'total_viajes'         => $totalViajes,
+                'promedio_estrellas'   => $promedio,
+                'total_calificaciones' => $conCalificacion->count(),
+                'resenas'              => $resenas,
+            ],
+        ]);
     }
 
     public function Destroy(User $user)

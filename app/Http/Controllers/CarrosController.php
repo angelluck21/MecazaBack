@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Carros;
+use App\Models\Reservarviaje;
+use App\Models\Faturaviaje;
+use App\Models\Precioviajes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -17,6 +20,7 @@ class CarrosController extends Controller
             'Telefono'    => 'required|string',
             'Placa'       => 'required|string|unique:carros,placa',
             'Asientos'    => 'required|integer|min:1|max:4',
+            'Origen'      => 'nullable|string|max:255',
             'Destino'     => 'required|string',
             'Horasalida'  => 'required|string',
             'Fecha'       => 'required|date',
@@ -50,6 +54,7 @@ class CarrosController extends Controller
                 'telefono'    => $request->Telefono,
                 'placa'       => $request->Placa,
                 'asientos'    => $request->Asientos,
+                'origen'      => $request->Origen,
                 'destino'     => $request->Destino,
                 'horasalida'  => $request->Horasalida,
                 'fecha'       => $request->Fecha,
@@ -87,6 +92,7 @@ class CarrosController extends Controller
             'conductor'  => $request->Conductor,
             'placa'      => $request->Placa,
             'asientos'   => $request->Asientos,
+            'origen'     => $request->Origen,
             'destino'    => $request->Destino,
             'horasalida' => $request->Horasalida,
             'fecha'      => $request->Fecha,
@@ -119,6 +125,61 @@ class CarrosController extends Controller
 
         return response()->json([
             'message' => 'Carro eliminado exitosamente',
+        ], 200);
+    }
+
+    public function IniciarViaje(Request $request, Carros $carro)
+    {
+        // Poner el carro en estado "En viaje" (id_estados = 2)
+        $carro->update(['id_estados' => 2]);
+
+        return response()->json([
+            'message' => 'Viaje iniciado correctamente.',
+            'data'    => $carro->fresh(),
+        ], 200);
+    }
+
+    public function TerminarViaje(Request $request, Carros $carro)
+    {
+        // 1. Completar todas las reservas confirmadas de este carro y generar factura
+        $reservas = Reservarviaje::where('id_carros', $carro->id_carros)
+            ->whereIn('estado', ['Confirmada', 'confirmada'])
+            ->get();
+
+        foreach ($reservas as $reserva) {
+            $reserva->estado = 'completada';
+            $reserva->save();
+
+            // Generar factura si aún no tiene
+            $tieneFactura = Faturaviaje::where('id_reservarviajes', $reserva->id_reservarviajes)->exists();
+            if (!$tieneFactura) {
+                try {
+                    $precio   = Precioviajes::first();
+                    $subtotal = Precioviajes::getPrecioParaRuta($carro->origen ?? null, $carro->destino ?? null);
+                    $impuesto = $subtotal * 0.19;
+                    Faturaviaje::create([
+                        'id_users'          => $reserva->id_users,
+                        'id_carros'         => $reserva->id_carros,
+                        'id_precioviajes'   => $precio?->id_precioviajes ?? 1,
+                        'id_reservarviajes' => $reserva->id_reservarviajes,
+                        'origen'            => $carro->origen ?? '',
+                        'destino'           => $carro->destino ?? '',
+                        'subtotal'          => $subtotal,
+                        'impuesto'          => $impuesto,
+                        'total'             => $subtotal + $impuesto,
+                        'numero_factura'    => 'FAC-' . now()->format('YmdHis') . rand(10,99) . '-' . $reserva->id_reservarviajes,
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Error al generar factura al terminar viaje', ['error' => $e->getMessage()]);
+                }
+            }
+        }
+
+        // 2. Eliminar el carro
+        $carro->delete();
+
+        return response()->json([
+            'message' => 'Viaje finalizado. El vehículo ha sido eliminado.',
         ], 200);
     }
 }

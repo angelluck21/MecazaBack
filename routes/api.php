@@ -21,10 +21,11 @@ Route::post('/auth/google', [GoogleAuthController::class,  'handleGoogleAuth']);
 Route::get('/validar-invitacion/{token}',       [InvitacionController::class, 'ValidarToken']);
 Route::post('/registrar-conductor/{token}',     [InvitacionController::class, 'RegistrarConductor']);
 
-Route::get('/listarcarro',  [CarrosController::class,       'GetAll']);
-Route::get('/listarestados',[EstadosController::class,      'GetAll']);
-Route::get('/listarprecios',[PrecioviajeController::class,  'GetAll']);
-Route::get('/listarreserva',[ReservarviajeController::class,'GetAll']);
+Route::get('/listarcarro',         [CarrosController::class,    'GetAll']);
+Route::get('/listarestados',       [EstadosController::class,   'GetAll']);
+Route::get('/listarprecios',       [PrecioviajeController::class,'GetAll']);
+Route::get('/listarreserva',       [ReservarviajeController::class,'GetAll']);
+Route::get('/conductor-perfil/{id_users}', [RegistroController::class, 'PerfilConductor']);
 
 // ── Requieren token ───────────────────────────────────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {
@@ -44,6 +45,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/actualizarcarro/{carro}',          [CarrosController::class, 'Update']);
     Route::put('/actualizarestado/{carro}',         [CarrosController::class, 'UpdateEstado']);
     Route::delete('/eliminarcarro/{carro}',         [CarrosController::class, 'Destroy']);
+    Route::post('/iniciarviajenotify/{carro}',      [CarrosController::class, 'IniciarViaje']);
+    Route::post('/terminarviaje/{carro}',           [CarrosController::class, 'TerminarViaje']);
 
     // Estados
     Route::post('/agregarestados',                  [EstadosController::class,     'Create']);
@@ -62,6 +65,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/crearreserva',                            [ReservarviajeController::class, 'Create']);
     Route::put('/actualizarreserva/{reservarviaje}',        [ReservarviajeController::class, 'Update']);
     Route::put('/confirmarreserva/{reservarviaje}',         [ReservarviajeController::class, 'Confirmar']);
+    Route::put('/completarreserva/{reservarviaje}',         [ReservarviajeController::class, 'Completar']);
     Route::put('/calificarreserva/{reservarviaje}',         [ReservarviajeController::class, 'Calificar']);
     Route::delete('/eliminarreserva/{reservarviaje}',       [ReservarviajeController::class, 'Destroy']);
 

@@ -165,13 +165,14 @@ class ReservarviajeController extends Controller
             if (strtolower($newEstado) === 'confirmada') {
                 try {
                     $precio   = Precioviajes::first();
-                    $subtotal = (float)($precio?->valor ?? 50000);
+                    $subtotal = Precioviajes::getPrecioParaRuta($carro->origen ?? null, $carro->destino ?? null);
                     $impuesto = $subtotal * 0.19;
                     Faturaviaje::create([
                         'id_users'          => $reservarviaje->id_users,
                         'id_carros'         => $reservarviaje->id_carros,
                         'id_precioviajes'   => $precio?->id_precioviajes ?? 1,
                         'id_reservarviajes' => $reservarviaje->id_reservarviajes,
+                        'origen'            => $carro->origen ?? '',
                         'destino'           => $carro->destino ?? '',
                         'subtotal'          => $subtotal,
                         'impuesto'          => $impuesto,
@@ -220,6 +221,25 @@ class ReservarviajeController extends Controller
 
         return response()->json([
             'message' => 'Reserva eliminada exitosamente',
+        ], 200);
+    }
+
+    public function Completar(Request $request, Reservarviaje $reservarviaje)
+    {
+        $estado = strtolower($reservarviaje->estado ?? '');
+
+        if ($estado !== 'confirmada') {
+            return response()->json([
+                'message' => 'Solo puedes completar reservas que estén confirmadas.',
+            ], 400);
+        }
+
+        $reservarviaje->estado = 'completada';
+        $reservarviaje->save();
+
+        return response()->json([
+            'message' => '¡Viaje completado! Gracias por viajar con Mecaza.',
+            'data'    => $reservarviaje,
         ], 200);
     }
 
