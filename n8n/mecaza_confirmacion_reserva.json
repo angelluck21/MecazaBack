@@ -1,0 +1,178 @@
+{
+  "name": "Mecaza — Confirmación / Rechazo de Reserva",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "confirmacion-pasajero",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-node",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.estado.toLowerCase() }}",
+              "operation": "contains",
+              "value2": "confirmada"
+            }
+          ]
+        }
+      },
+      "id": "if-node",
+      "name": "¿Confirmada o Rechazada?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "asunto",
+              "value": "=✅ Tu reserva fue CONFIRMADA — Mecaza"
+            },
+            {
+              "name": "html",
+              "value": "=<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n  <title>Reserva Confirmada</title>\n  <style>\n    body { margin:0; padding:0; background:#f1f5f9; font-family: Arial, sans-serif; }\n    .wrapper { max-width:580px; margin:32px auto; background:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.10); }\n    .header { background: linear-gradient(135deg, #1d4ed8 0%, #7c3aed 100%); padding:36px 32px; text-align:center; }\n    .header-icon { font-size:52px; margin-bottom:12px; }\n    .header h1 { color:#ffffff; font-size:24px; font-weight:800; margin:0 0 6px; }\n    .header p { color:#c7d2fe; font-size:14px; margin:0; }\n    .badge { display:inline-block; background:#dcfce7; color:#15803d; border:1.5px solid #bbf7d0; border-radius:99px; padding:6px 20px; font-size:13px; font-weight:700; margin:20px 0 0; }\n    .body { padding:32px; }\n    .greeting { font-size:16px; color:#1e293b; margin-bottom:20px; }\n    .card { background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:20px 24px; margin-bottom:24px; }\n    .card-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#94a3b8; margin-bottom:14px; }\n    .row { display:flex; justify-content:space-between; align-items:flex-start; padding:8px 0; border-bottom:1px solid #f1f5f9; }\n    .row:last-child { border-bottom:none; }\n    .row-label { font-size:13px; color:#64748b; font-weight:600; }\n    .row-value { font-size:13px; color:#1e293b; font-weight:700; text-align:right; max-width:60%; }\n    .highlight { background: linear-gradient(135deg, #eff6ff, #f5f3ff); border:1.5px solid #c7d2fe; border-radius:12px; padding:16px 20px; margin-bottom:24px; text-align:center; }\n    .highlight p { margin:0; font-size:14px; color:#3730a3; font-weight:600; }\n    .btn { display:inline-block; background: linear-gradient(135deg, #25D366, #128C7E); color:#ffffff; text-decoration:none; padding:13px 28px; border-radius:10px; font-weight:700; font-size:14px; margin-top:4px; }\n    .footer { background:#f8fafc; border-top:1px solid #e2e8f0; padding:20px 32px; text-align:center; }\n    .footer p { margin:0; font-size:11px; color:#94a3b8; line-height:1.8; }\n  </style>\n</head>\n<body>\n  <div class=\"wrapper\">\n    <div class=\"header\">\n      <div class=\"header-icon\">✅</div>\n      <h1>¡Reserva Confirmada!</h1>\n      <p>Tu asiento está asegurado para el viaje</p>\n      <span class=\"badge\">CONFIRMADA</span>\n    </div>\n\n    <div class=\"body\">\n      <p class=\"greeting\">Hola <strong>{{ $json.body.pasajero_nombre }}</strong>,<br/>el conductor ha <strong>aceptado</strong> tu reserva. ¡Ya puedes prepararte para el viaje!</p>\n\n      <div class=\"card\">\n        <div class=\"card-title\">Detalles del viaje</div>\n        <div class=\"row\"><span class=\"row-label\">Conductor</span><span class=\"row-value\">{{ $json.body.conductor }}</span></div>\n        <div class=\"row\"><span class=\"row-label\">Placa</span><span class=\"row-value\">{{ $json.body.placa }}</span></div>\n        <div class=\"row\"><span class=\"row-label\">Origen</span><span class=\"row-value\">{{ $json.body.origen }}</span></div>\n        <div class=\"row\"><span class=\"row-label\">Destino</span><span class=\"row-value\">{{ $json.body.destino }}</span></div>\n        <div class=\"row\"><span class=\"row-label\">Fecha</span><span class=\"row-value\">{{ $json.body.fecha }}</span></div>\n        <div class=\"row\"><span class=\"row-label\">Hora de salida</span><span class=\"row-value\">{{ $json.body.hora }}</span></div>\n        <div class=\"row\"><span class=\"row-label\">Asiento</span><span class=\"row-value\">#{{ $json.body.asiento }}</span></div>\n        <div class=\"row\"><span class=\"row-label\">Reserva</span><span class=\"row-value\">#{{ $json.body.reserva_id }}</span></div>\n      </div>\n\n      <div class=\"highlight\">\n        <p>📍 Recuerda estar en tu punto de recogida a tiempo.<br/>Puedes contactar al conductor por WhatsApp si tienes alguna duda.</p>\n      </div>\n\n      {{ $json.body.pasajero_tel ? '<div style=\"text-align:center;margin-bottom:20px;\"><a class=\"btn\" href=\"https://wa.me/57' + $json.body.pasajero_tel.replace(/\\D/g, '') + '\">💬 Contactar al conductor</a></div>' : '' }}\n    </div>\n\n    <div class=\"footer\">\n      <p>Este correo fue enviado automáticamente por <strong>Mecaza</strong>.<br/>Plataforma de transporte compartido · contacto@mecaza.com</p>\n    </div>\n  </div>\n</body>\n</html>"
+            }
+          ]
+        }
+      },
+      "id": "set-confirmada",
+      "name": "Email — Confirmada",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [700, 180]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "asunto",
+              "value": "=❌ Tu reserva fue rechazada — Mecaza"
+            },
+            {
+              "name": "html",
+              "value": "=<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n  <title>Reserva Rechazada</title>\n  <style>\n    body { margin:0; padding:0; background:#f1f5f9; font-family: Arial, sans-serif; }\n    .wrapper { max-width:580px; margin:32px auto; background:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.10); }\n    .header { background: linear-gradient(135deg, #dc2626 0%, #9f1239 100%); padding:36px 32px; text-align:center; }\n    .header-icon { font-size:52px; margin-bottom:12px; }\n    .header h1 { color:#ffffff; font-size:24px; font-weight:800; margin:0 0 6px; }\n    .header p { color:#fecaca; font-size:14px; margin:0; }\n    .badge { display:inline-block; background:#fee2e2; color:#b91c1c; border:1.5px solid #fca5a5; border-radius:99px; padding:6px 20px; font-size:13px; font-weight:700; margin:20px 0 0; }\n    .body { padding:32px; }\n    .greeting { font-size:16px; color:#1e293b; margin-bottom:20px; }\n    .card { background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:20px 24px; margin-bottom:24px; }\n    .card-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#94a3b8; margin-bottom:14px; }\n    .row { display:flex; justify-content:space-between; align-items:flex-start; padding:8px 0; border-bottom:1px solid #f1f5f9; }\n    .row:last-child { border-bottom:none; }\n    .row-label { font-size:13px; color:#64748b; font-weight:600; }\n    .row-value { font-size:13px; color:#1e293b; font-weight:700; text-align:right; max-width:60%; }\n    .motivo-box { background:#fff7f7; border:1.5px solid #fca5a5; border-radius:10px; padding:14px 18px; margin-bottom:24px; }\n    .motivo-box p { margin:0; font-size:13px; color:#7f1d1d; }\n    .motivo-box strong { display:block; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:#ef4444; margin-bottom:6px; }\n    .info-box { background:#eff6ff; border:1.5px solid #bfdbfe; border-radius:12px; padding:16px 20px; margin-bottom:24px; text-align:center; }\n    .info-box p { margin:0; font-size:14px; color:#1d4ed8; font-weight:600; }\n    .btn { display:inline-block; background: linear-gradient(135deg, #1d4ed8, #7c3aed); color:#ffffff; text-decoration:none; padding:13px 28px; border-radius:10px; font-weight:700; font-size:14px; }\n    .footer { background:#f8fafc; border-top:1px solid #e2e8f0; padding:20px 32px; text-align:center; }\n    .footer p { margin:0; font-size:11px; color:#94a3b8; line-height:1.8; }\n  </style>\n</head>\n<body>\n  <div class=\"wrapper\">\n    <div class=\"header\">\n      <div class=\"header-icon\">❌</div>\n      <h1>Reserva Rechazada</h1>\n      <p>El conductor no pudo aceptar tu solicitud</p>\n      <span class=\"badge\">RECHAZADA</span>\n    </div>\n\n    <div class=\"body\">\n      <p class=\"greeting\">Hola <strong>{{ $json.body.pasajero_nombre }}</strong>,<br/>lamentablemente el conductor ha <strong>rechazado</strong> tu reserva para este viaje.</p>\n\n      <div class=\"card\">\n        <div class=\"card-title\">Detalles de la reserva rechazada</div>\n        <div class=\"row\"><span class=\"row-label\">Conductor</span><span class=\"row-value\">{{ $json.body.conductor }}</span></div>\n        <div class=\"row\"><span class=\"row-label\">Ruta</span><span class=\"row-value\">{{ $json.body.origen }} → {{ $json.body.destino }}</span></div>\n        <div class=\"row\"><span class=\"row-label\">Fecha</span><span class=\"row-value\">{{ $json.body.fecha }}</span></div>\n        <div class=\"row\"><span class=\"row-label\">Asiento</span><span class=\"row-value\">#{{ $json.body.asiento }}</span></div>\n        <div class=\"row\"><span class=\"row-label\">Reserva</span><span class=\"row-value\">#{{ $json.body.reserva_id }}</span></div>\n      </div>\n\n      {{ $json.body.motivo ? '<div class=\"motivo-box\"><strong>Motivo del rechazo</strong><p>' + $json.body.motivo + '</p></div>' : '' }}\n\n      <div class=\"info-box\">\n        <p>🔍 No te desanimes — hay más viajes disponibles.<br/>Ingresa a Mecaza y encuentra otra opción para tu ruta.</p>\n      </div>\n\n      <div style=\"text-align:center;margin-bottom:8px;\">\n        <a class=\"btn\" href=\"https://mecaza.com\">Ver otros viajes disponibles</a>\n      </div>\n    </div>\n\n    <div class=\"footer\">\n      <p>Este correo fue enviado automáticamente por <strong>Mecaza</strong>.<br/>Plataforma de transporte compartido · contacto@mecaza.com</p>\n    </div>\n  </div>\n</body>\n</html>"
+            }
+          ]
+        }
+      },
+      "id": "set-rechazada",
+      "name": "Email — Rechazada",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [700, 420]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Webhook').item.json.body.pasajero_email }}",
+        "subject": "={{ $json.asunto }}",
+        "emailType": "html",
+        "message": "={{ $json.html }}",
+        "options": {}
+      },
+      "id": "gmail-confirmada",
+      "name": "Gmail — Confirmada",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [940, 180],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "cvwq8YsdtaF0eEUK",
+          "name": "Gmail account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Webhook').item.json.body.pasajero_email }}",
+        "subject": "={{ $json.asunto }}",
+        "emailType": "html",
+        "message": "={{ $json.html }}",
+        "options": {}
+      },
+      "id": "gmail-rechazada",
+      "name": "Gmail — Rechazada",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [940, 420],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "cvwq8YsdtaF0eEUK",
+          "name": "Gmail account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"ok\": true }",
+        "options": {}
+      },
+      "id": "respond-confirmada",
+      "name": "Responder — Confirmada",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1180, 180]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"ok\": true }",
+        "options": {}
+      },
+      "id": "respond-rechazada",
+      "name": "Responder — Rechazada",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1180, 420]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [{ "node": "¿Confirmada o Rechazada?", "type": "main", "index": 0 }]
+      ]
+    },
+    "¿Confirmada o Rechazada?": {
+      "main": [
+        [{ "node": "Email — Confirmada", "type": "main", "index": 0 }],
+        [{ "node": "Email — Rechazada",  "type": "main", "index": 0 }]
+      ]
+    },
+    "Email — Confirmada": {
+      "main": [
+        [{ "node": "Gmail — Confirmada", "type": "main", "index": 0 }]
+      ]
+    },
+    "Email — Rechazada": {
+      "main": [
+        [{ "node": "Gmail — Rechazada", "type": "main", "index": 0 }]
+      ]
+    },
+    "Gmail — Confirmada": {
+      "main": [
+        [{ "node": "Responder — Confirmada", "type": "main", "index": 0 }]
+      ]
+    },
+    "Gmail — Rechazada": {
+      "main": [
+        [{ "node": "Responder — Rechazada", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "reserva-conductor",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "c31458d3-1e82-4928-a481-23f6fa68110c",
+      "name": "Webhook Reserva",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        32,
+        144
+      ],
+      "webhookId": "reserva-conductor"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"conductor\":       \"{{ $json.body.conductor }}\",\n  \"conductor_email\": \"{{ $json.body.conductor_email }}\",\n  \"pasajero_nombre\": \"{{ $json.body.pasajero_nombre }}\",\n  \"pasajero_tel\":    \"{{ $json.body.pasajero_tel }}\",\n  \"asiento\":         \"{{ $json.body.asiento }}\",\n  \"email_html\": \"<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Nueva Reserva - Mecaza</title></head><body style='margin:0;padding:0;background:#f0f4ff;font-family:Arial,sans-serif;'><table width='100%' cellpadding='0' cellspacing='0' style='background:#f0f4ff;padding:32px 16px;'><tr><td align='center'><table width='100%' style='max-width:580px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(79,70,229,0.10);'><tr><td style='background:linear-gradient(135deg,#1e40af 0%,#7c3aed 100%);padding:36px 40px;text-align:center;'><h1 style='margin:0;color:#ffffff;font-size:26px;font-weight:800;letter-spacing:-0.5px;'>Mecaza</h1><p style='margin:6px 0 0;color:#c7d2fe;font-size:14px;'>Plataforma de viajes compartidos</p></td></tr><tr><td style='padding:36px 40px 20px;'><h2 style='margin:0 0 6px;color:#1e293b;font-size:20px;font-weight:700;'>Nueva reserva en tu vehiculo</h2><p style='margin:0 0 24px;color:#64748b;font-size:14px;line-height:1.6;'>Hola <strong style='color:#1e293b;'>{{ $json.body.conductor }}</strong>, alguien acaba de reservar un asiento. Comunicate con el pasajero para verificar su identidad antes de confirmar. !Para confirmar el viaje, regrese a la pagina y revise sus notificaciones</p><table width='100%' cellpadding='0' cellspacing='0' style='background:#fdf4ff;border-radius:12px;border:1.5px solid #e9d5ff;margin-bottom:20px;overflow:hidden;'><tr><td style='padding:20px 24px;'><p style='margin:0 0 12px;color:#7c3aed;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;'>Datos del pasajero</p><table width='100%' cellpadding='0' cellspacing='0'><tr><td style='padding:6px 0;border-bottom:1px solid #ede9fe;'><span style='color:#94a3b8;font-size:13px;'>Nombre</span></td><td align='right' style='padding:6px 0;border-bottom:1px solid #ede9fe;'><strong style='color:#1e293b;font-size:13px;'>{{ $json.body.pasajero_nombre }}</strong></td></tr><tr><td style='padding:6px 0;border-bottom:1px solid #ede9fe;'><span style='color:#94a3b8;font-size:13px;'>Telefono</span></td><td align='right' style='padding:6px 0;border-bottom:1px solid #ede9fe;'><strong style='color:#1e293b;font-size:14px;letter-spacing:0.5px;'>{{ $json.body.pasajero_tel }}</strong></td></tr><tr><td style='padding:6px 0;border-bottom:1px solid #ede9fe;'><span style='color:#94a3b8;font-size:13px;'>Ubicacion de recogida</span></td><td align='right' style='padding:6px 0;border-bottom:1px solid #ede9fe;'><strong style='color:#1e293b;font-size:13px;'>{{ $json.body.ubicacion }}</strong></td></tr><tr><td style='padding:6px 0;'><span style='color:#94a3b8;font-size:13px;'>Asiento</span></td><td align='right' style='padding:6px 0;'><strong style='color:#1e293b;font-size:13px;'>#{{ $json.body.asiento }}</strong></td></tr></table></td></tr></table><table width='100%' cellpadding='0' cellspacing='0' style='background:#f0f9ff;border-radius:12px;border:1.5px solid #bae6fd;margin-bottom:28px;overflow:hidden;'><tr><td style='padding:20px 24px;'><p style='margin:0 0 12px;color:#0369a1;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;'>Detalles del viaje</p><table width='100%' cellpadding='0' cellspacing='0'><tr><td style='padding:6px 0;border-bottom:1px solid #e0f2fe;'><span style='color:#94a3b8;font-size:13px;'>Placa</span></td><td align='right' style='padding:6px 0;border-bottom:1px solid #e0f2fe;'><strong style='color:#1e293b;font-size:13px;font-family:monospace;'>{{ $json.body.placa }}</strong></td></tr><tr><td style='padding:6px 0;border-bottom:1px solid #e0f2fe;'><span style='color:#94a3b8;font-size:13px;'>Ruta</span></td><td align='right' style='padding:6px 0;border-bottom:1px solid #e0f2fe;'><strong style='color:#1e293b;font-size:13px;'>{{ $json.body.origen }} - {{ $json.body.destino }}</strong></td></tr><tr><td style='padding:6px 0;border-bottom:1px solid #e0f2fe;'><span style='color:#94a3b8;font-size:13px;'>Fecha y hora</span></td><td align='right' style='padding:6px 0;border-bottom:1px solid #e0f2fe;'><strong style='color:#1e293b;font-size:13px;'>{{ $json.body.fecha }} a las {{ $json.body.hora }}</strong></td></tr><tr><td style='padding:6px 0;'><span style='color:#94a3b8;font-size:13px;'>Reserva</span></td><td align='right' style='padding:6px 0;'><strong style='color:#1e293b;font-size:13px;'>#{{ $json.body.reserva_id }}</strong></td></tr></table></td></tr></table><table width='100%' cellpadding='0' cellspacing='0' style='background:#fff7ed;border-radius:12px;border:1.5px solid #fed7aa;margin-bottom:28px;'><tr><td style='padding:24px;'><p style='margin:0 0 6px;color:#ea580c;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;'>Accion requerida</p><p style='margin:0 0 20px;color:#7c2d12;font-size:14px;line-height:1.6;'>Llama o escribe al pasajero para verificar que es quien dice ser. Solo confirma la reserva despues de hablar con el.</p><table width='100%' cellpadding='0' cellspacing='0'><tr><td align='center' style='padding-bottom:12px;'><p style='margin:0 0 6px;color:#92400e;font-size:12px;'>Numero del pasajero:</p><p style='margin:0;color:#1e293b;font-size:22px;font-weight:800;letter-spacing:1px;'>{{ $json.body.pasajero_tel }}</p></td></tr><tr><td align='center'><table cellpadding='0' cellspacing='0'><tr><td style='padding-right:8px;'><a href='https://wa.me/57{{ $json.body.pasajero_tel }}' target='_blank' style='display:inline-block;background:#25D366;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;padding:13px 28px;border-radius:50px;'>WhatsApp</a></td><td><a href='tel:{{ $json.body.pasajero_tel }}' style='display:inline-block;background:#1e40af;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;padding:13px 28px;border-radius:50px;'>Llamar</a></td></tr></table></td></tr></table></td></tr></table></td></tr><tr><td style='background:#f8fafc;border-top:1px solid #e2e8f0;padding:20px 40px;text-align:center;'><p style='margin:0 0 4px;color:#94a3b8;font-size:12px;'>Mecaza - Reserva registrada el {{ $json.body.fecha_reserva }}</p></td></tr></table></td></tr></table></body></html>\"\n}",
+        "options": {}
+      },
+      "id": "f464c646-ef9b-4787-bf7b-d276032c8297",
+      "name": "Construir datos y HTML",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        272,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.conductor_email }}",
+        "subject": "={{ 'Nueva reserva — ' + $json.pasajero_nombre + ' reservo el asiento #' + $json.asiento }}",
+        "message": "={{ $json.email_html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "e40abe47-457d-48b3-8463-d6c775adf53f",
+      "name": "Gmail — Correo al conductor",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        512,
+        144
+      ],
+      "webhookId": "fca525fb-6abc-4dfd-a9c5-580fa05d437b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "LVqxWCK5xVuBYSlb",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"message\": \"Notificacion enviada al conductor\" } }}",
+        "options": {}
+      },
+      "id": "fb1ffa0d-cbe3-4200-ad97-5f1ca64b07ed",
+      "name": "Responder Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        736,
+        144
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Reserva": {
+      "main": [
+        [
+          {
+            "node": "Construir datos y HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Construir datos y HTML": {
+      "main": [
+        [
+          {
+            "node": "Gmail — Correo al conductor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail — Correo al conductor": {
+      "main": [
+        [
+          {
+            "node": "Responder Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "cb815eedfcb3328ffe9320f9f04afad730db39c384db66672f94d002d250f958"
+  }
+}
