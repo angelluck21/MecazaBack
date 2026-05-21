@@ -12,17 +12,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('carros', function (Blueprint $table) {
-        $table->id("id_carros");
-        $table-> string ("conductor");
-        $table-> string ("imagencarro");
-        $table-> string ("telefono");
-        $table-> string ("placa");
-        $table-> string ("asientos");
-        $table-> string ("destino");
-        $table-> string ("horasalida");
-        $table-> unsignedBigInteger("id_users");
-        $table-> unsignedBigInteger("id_estados");
-        $table-> date ("fecha");
+        $table->id('id_carros');
+        $table->string('conductor');
+        $table->string('imagencarro')->nullable();
+        $table->string('telefono');
+        $table->string('placa')->unique();
+        $table->string('asientos');
+        $table->string('horasalida');
+        $table->date('fecha');
+        $table->unsignedBigInteger('id_users');
+        $table->unsignedBigInteger('id_estados');
+        $table->unsignedBigInteger('id_precioviaje')->nullable();
         $table->timestamps();
     });
 

@@ -20,8 +20,7 @@ class CarrosController extends Controller
             'Telefono'    => 'required|string',
             'Placa'       => 'required|string|unique:carros,placa',
             'Asientos'    => 'required|integer|min:1|max:4',
-            'Origen'      => 'nullable|string|max:255',
-            'Destino'     => 'required|string',
+            'Id_precioviaje'  => 'required|integer',
             'Horasalida'  => 'required|string',
             'Fecha'       => 'required|date',
             'Estado'      => 'required|integer',
@@ -49,17 +48,16 @@ class CarrosController extends Controller
             }
 
             $carro = Carros::create([
-                'conductor'   => $request->Conductor,
-                'imagencarro' => $urlImagen,
-                'telefono'    => $request->Telefono,
-                'placa'       => $request->Placa,
-                'asientos'    => $request->Asientos,
-                'origen'      => $request->Origen,
-                'destino'     => $request->Destino,
-                'horasalida'  => $request->Horasalida,
-                'fecha'       => $request->Fecha,
-                'id_estados'  => $request->Estado,
-                'id_users'    => $request->Userid,
+                'conductor'      => $request->Conductor,
+                'imagencarro'    => $urlImagen,
+                'telefono'       => $request->Telefono,
+                'placa'          => $request->Placa,
+                'asientos'       => $request->Asientos,
+                'horasalida'     => $request->Horasalida,
+                'fecha'          => $request->Fecha,
+                'id_estados'     => $request->Estado,
+                'id_users'       => $request->Userid,
+                'id_precioviaje' => $request->Id_precioviaje,
             ]);
 
             return response()->json([
@@ -81,7 +79,7 @@ class CarrosController extends Controller
     public function GetAll()
     {
         return response()->json([
-            'data'    => Carros::with('reservas')->get(),
+            'data'    => Carros::with('reservas', 'precioviaje')->get(),
             'message' => 'Consulta de carros exitosa',
         ], 200);
     }
@@ -154,16 +152,17 @@ class CarrosController extends Controller
             $tieneFactura = Faturaviaje::where('id_reservarviajes', $reserva->id_reservarviajes)->exists();
             if (!$tieneFactura) {
                 try {
-                    $precio   = Precioviajes::first();
-                    $subtotal = Precioviajes::getPrecioParaRuta($carro->origen ?? null, $carro->destino ?? null);
-                    $impuesto = $subtotal * 0.19;
+                    $precioRecord = $carro->precioviaje;
+                    $subtotal     = $precioRecord ? (float) $precioRecord->precio : 50000.0;
+                    $impuesto     = $subtotal * 0.19;
+
                     Faturaviaje::create([
                         'id_users'          => $reserva->id_users,
                         'id_carros'         => $reserva->id_carros,
-                        'id_precioviajes'   => $precio?->id_precioviajes ?? 1,
+                        'id_precioviajes'   => $precioRecord?->id_precioviajes ?? 1,
                         'id_reservarviajes' => $reserva->id_reservarviajes,
-                        'origen'            => $carro->origen ?? '',
-                        'destino'           => $carro->destino ?? '',
+                        'origen'            => $precioRecord?->origen ?? '',
+                        'destino'           => $precioRecord?->destino ?? '',
                         'subtotal'          => $subtotal,
                         'impuesto'          => $impuesto,
                         'total'             => $subtotal + $impuesto,
@@ -175,11 +174,30 @@ class CarrosController extends Controller
             }
         }
 
-        // 2. Eliminar el carro
-        $carro->delete();
+        // Marcar el carro como "Viaje terminado" (5)
+        $carro->update(['id_estados' => 5]);
 
         return response()->json([
-            'message' => 'Viaje finalizado. El vehículo ha sido eliminado.',
+            'message' => 'Viaje finalizado correctamente.',
         ], 200);
+    }
+
+    public function HistorialConductor(Request $request)
+    {
+        $userId = $request->user()->id_users;
+
+        $carros = Carros::with([
+                'precioviaje',
+                'reservas' => fn($q) => $q->where('estado', 'completada')->with('usuario'),
+            ])
+            ->where('id_users', $userId)
+            ->whereHas('reservas', fn($q) => $q->where('estado', 'completada'))
+            ->orderBy('updated_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'data'    => $carros,
+            'message' => 'Historial del conductor',
+        ]);
     }
 }

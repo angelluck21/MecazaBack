@@ -111,11 +111,11 @@
         </div>
         <div class="row">
             <span class="row-label">Origen:</span>
-            <span class="row-value">{{ $factura->origen ?? $carro->origen ?? '—' }}</span>
+            <span class="row-value">{{ $factura->origen ?: ($carro->precioviaje?->origen ?? '—') }}</span>
         </div>
         <div class="row">
             <span class="row-label">Destino:</span>
-            <span class="row-value">{{ $factura->destino ?? $carro->destino ?? '—' }}</span>
+            <span class="row-value">{{ $factura->destino ?: ($carro->precioviaje?->destino ?? '—') }}</span>
         </div>
         <div class="row">
             <span class="row-label">Fecha del viaje:</span>
@@ -145,7 +145,7 @@
             </thead>
             <tbody>
                 <tr>
-                    <td>Pasaje compartido — {{ $factura->origen ?? $carro->origen ?? '' }} → {{ $factura->destino ?? $carro->destino ?? '' }}</td>
+                    <td>Pasaje compartido — {{ $factura->origen ?: ($carro->precioviaje?->origen ?? '') }} → {{ $factura->destino ?: ($carro->precioviaje?->destino ?? '') }}</td>
                     <td class="td-right">${{ number_format($factura->subtotal, 0, ',', '.') }}</td>
                 </tr>
             </tbody>

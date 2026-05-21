@@ -18,13 +18,17 @@ class Carros extends Model
         'telefono',
         'placa',
         'asientos',
-        'origen',
-        'destino',
         'horasalida',
         'fecha',
         'id_estados',
         'id_users',
+        'id_precioviaje',
     ];
+
+    public function precioviaje()
+    {
+        return $this->belongsTo(Precioviajes::class, 'id_precioviaje', 'id_precioviajes');
+    }
 
     public function estado()
     {

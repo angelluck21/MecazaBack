@@ -26,6 +26,14 @@ class ReservarviajeController extends Controller
         ]);
 
         try {
+            // Bloquear si el carro ya está en viaje
+            $carroSolicitado = Carros::find($request->id_carros);
+            if ($carroSolicitado && intval($carroSolicitado->id_estados) === 2) {
+                return response()->json([
+                    'message' => 'Este viaje ya está en curso y no acepta nuevas reservas.',
+                ], 422);
+            }
+
             $reservar            = new Reservarviaje();
             $reservar->nombre    = $request->Nombre;
             $reservar->ubicacion = $request->Ubicacion;
@@ -36,7 +44,7 @@ class ReservarviajeController extends Controller
             $reservar->save();
 
             // Notificar al conductor por email
-            $carro = Carros::find($request->id_carros);
+            $carro = Carros::with('precioviaje')->find($request->id_carros);
             if ($carro) {
                 $conductor = User::where('name', $carro->conductor)->first();
                 if ($conductor?->email) {
@@ -78,8 +86,8 @@ class ReservarviajeController extends Controller
                         'pasajero_email'    => $request->user()->email ?? '',
                         'ubicacion'         => $request->Ubicacion,
                         'asiento'           => $request->Asiento,
-                        'origen'            => $carro->origen ?? '',
-                        'destino'           => $carro->destino ?? '',
+                        'origen'            => $carro->precioviaje?->origen  ?? '',
+                        'destino'           => $carro->precioviaje?->destino ?? '',
                         'fecha'             => $carro->fecha ?? '',
                         'hora'              => $carro->horasalida ?? '',
                         'placa'             => $carro->placa ?? '',
@@ -158,22 +166,22 @@ class ReservarviajeController extends Controller
 
         // Cargar usuario y carro relacionados
         $usuario = User::find($reservarviaje->id_users);
-        $carro   = Carros::find($reservarviaje->id_carros);
+        $carro   = Carros::with('precioviaje')->find($reservarviaje->id_carros);
 
         if ($usuario && $carro) {
             // Generar factura automáticamente si se confirma
             if (strtolower($newEstado) === 'confirmada') {
                 try {
-                    $precio   = Precioviajes::first();
-                    $subtotal = Precioviajes::getPrecioParaRuta($carro->origen ?? null, $carro->destino ?? null);
-                    $impuesto = $subtotal * 0.19;
+                    $precioviaje = $carro->precioviaje;
+                    $subtotal    = $precioviaje ? (float) $precioviaje->precio : 50000.0;
+                    $impuesto    = $subtotal * 0.19;
                     Faturaviaje::create([
                         'id_users'          => $reservarviaje->id_users,
                         'id_carros'         => $reservarviaje->id_carros,
-                        'id_precioviajes'   => $precio?->id_precioviajes ?? 1,
+                        'id_precioviajes'   => $precioviaje?->id_precioviajes ?? 1,
                         'id_reservarviajes' => $reservarviaje->id_reservarviajes,
-                        'origen'            => $carro->origen ?? '',
-                        'destino'           => $carro->destino ?? '',
+                        'origen'            => $precioviaje?->origen  ?? '',
+                        'destino'           => $precioviaje?->destino ?? '',
                         'subtotal'          => $subtotal,
                         'impuesto'          => $impuesto,
                         'total'             => $subtotal + $impuesto,
@@ -195,8 +203,8 @@ class ReservarviajeController extends Controller
                         'estado'          => $newEstado,
                         'conductor'       => $carro->conductor ?? '',
                         'placa'           => $carro->placa ?? '',
-                        'origen'          => $carro->origen ?? '',
-                        'destino'         => $carro->destino ?? '',
+                        'origen'          => $carro->precioviaje?->origen  ?? '',
+                        'destino'         => $carro->precioviaje?->destino ?? '',
                         'fecha'           => $carro->fecha ?? '',
                         'hora'            => $carro->horasalida ?? '',
                         'asiento'         => $reservarviaje->asiento,

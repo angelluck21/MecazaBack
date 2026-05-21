@@ -9,14 +9,20 @@ class PrecioviajeController extends Controller
 {
     public function Create(Request $request)
     {
+        $request->validate([
+            'Origen'  => 'required|string|max:255',
+            'Destino' => 'required|string|max:255',
+            'Precio'  => 'required|numeric|min:0',
+        ]);
+
         Precioviajes::create([
-            'zara-mede'  => $request->ZaraMede,
-            'zara-cauca' => $request->ZaraCauca,
-            'cauca-mede' => $request->CaucaMede,
+            'origen'  => $request->Origen,
+            'destino' => $request->Destino,
+            'precio'  => $request->Precio,
         ]);
 
         return response()->json([
-            'message' => 'Precios guardados exitosamente',
+            'message' => 'Precio guardado exitosamente',
         ], 201);
     }
 
@@ -30,14 +36,20 @@ class PrecioviajeController extends Controller
 
     public function Update(Request $request, Precioviajes $precio)
     {
+        $request->validate([
+            'Origen'  => 'sometimes|string|max:255',
+            'Destino' => 'sometimes|string|max:255',
+            'Precio'  => 'sometimes|numeric|min:0',
+        ]);
+
         $precio->update([
-            'zara-mede'  => $request->ZaraMede,
-            'zara-cauca' => $request->ZaraCauca,
-            'cauca-mede' => $request->CaucaMede,
+            'origen'  => $request->Origen  ?? $precio->origen,
+            'destino' => $request->Destino ?? $precio->destino,
+            'precio'  => $request->Precio  ?? $precio->precio,
         ]);
 
         return response()->json([
-            'message' => 'Precios actualizados exitosamente',
+            'message' => 'Precio actualizado exitosamente',
         ], 200);
     }
 

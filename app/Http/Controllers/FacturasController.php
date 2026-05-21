@@ -23,10 +23,10 @@ class FacturasController extends Controller
                 ], 400);
             }
 
-            $carro  = Carros::findOrFail($reserva->id_carros);
-            $precio = Precioviajes::first();
+            $carro = Carros::with('precioviaje')->findOrFail($reserva->id_carros);
 
-            $subtotal       = Precioviajes::getPrecioParaRuta($carro->origen ?? null, $carro->destino ?? null);
+            $precioviaje    = $carro->precioviaje;
+            $subtotal       = $precioviaje ? (float) $precioviaje->precio : 50000.0;
             $impuesto       = $subtotal * 0.19;
             $total          = $subtotal + $impuesto;
             $numero_factura = 'FAC-' . date('YmdHis') . '-' . $id_reservarviajes;
@@ -34,10 +34,10 @@ class FacturasController extends Controller
             $factura = Faturaviaje::create([
                 'id_users'          => $reserva->id_users,
                 'id_carros'         => $reserva->id_carros,
-                'id_precioviajes'   => $precio?->id_precioviajes ?? 1,
+                'id_precioviajes'   => $precioviaje?->id_precioviajes ?? 1,
                 'id_reservarviajes' => $id_reservarviajes,
-                'origen'            => $carro->origen ?? '',
-                'destino'           => $carro->destino ?? '',
+                'origen'            => $precioviaje?->origen  ?? '',
+                'destino'           => $precioviaje?->destino ?? '',
                 'subtotal'          => $subtotal,
                 'impuesto'          => $impuesto,
                 'total'             => $total,
@@ -63,7 +63,7 @@ class FacturasController extends Controller
             $factura = Faturaviaje::findOrFail($id_factura);
             $usuario = $factura->usuario;
             $reserva = $factura->reserva;
-            $carro = $factura->carro;
+            $carro   = Carros::with('precioviaje')->find($factura->id_carros);
 
             $html = view('facturas.pdf', [
                 'factura' => $factura,
@@ -90,7 +90,7 @@ class FacturasController extends Controller
     {
         try {
             $factura = Faturaviaje::where('id_reservarviajes', $id_reservarviajes)
-                ->with(['usuario', 'carro', 'reserva'])
+                ->with(['usuario', 'carro.precioviaje', 'reserva'])
                 ->first();
 
             if (!$factura) {
@@ -116,7 +116,7 @@ class FacturasController extends Controller
     {
         try {
             $facturas = Faturaviaje::where('id_users', $request->user()->id_users)
-                ->with(['usuario', 'carro', 'reserva'])
+                ->with(['usuario', 'carro.precioviaje', 'reserva'])
                 ->orderBy('created_at', 'desc')
                 ->get();
 

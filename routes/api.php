@@ -47,6 +47,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/eliminarcarro/{carro}',         [CarrosController::class, 'Destroy']);
     Route::post('/iniciarviajenotify/{carro}',      [CarrosController::class, 'IniciarViaje']);
     Route::post('/terminarviaje/{carro}',           [CarrosController::class, 'TerminarViaje']);
+    Route::get('/historial-conductor',              [CarrosController::class, 'HistorialConductor']);
 
     // Estados
     Route::post('/agregarestados',                  [EstadosController::class,     'Create']);
