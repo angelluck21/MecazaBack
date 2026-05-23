@@ -63,10 +63,7 @@ class RegistroController extends Controller
 
     public function GetAll()
     {
-        return response()->json([
-            'data'    => User::all(),
-            'message' => 'Consulta de usuarios exitosa',
-        ], 200);
+        return response()->json(User::orderBy('created_at', 'desc')->paginate(10));
     }
 
     public function Show(User $user)

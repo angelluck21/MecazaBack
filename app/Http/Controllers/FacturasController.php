@@ -135,12 +135,11 @@ class FacturasController extends Controller
 
     public function GetAll()
     {
-        return response()->json([
-            'data' => Faturaviaje::with(['usuario', 'carro.precioviaje', 'reserva'])
+        return response()->json(
+            Faturaviaje::with(['usuario', 'carro.precioviaje', 'reserva'])
                 ->orderBy('created_at', 'desc')
-                ->get(),
-            'message' => 'Consulta de facturas exitosa',
-        ], 200);
+                ->paginate(10)
+        );
     }
 
     public function DescargarTodas()

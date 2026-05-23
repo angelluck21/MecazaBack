@@ -104,26 +104,44 @@ class CarrosController extends Controller
         ], 200);
     }
 
-    // ── Listar todos los carros activos (público, sin estado 4 ni 5) ─────────────
-    public function GetAll()
+    // ── Listar carros activos — público, con filtros + paginación ────────────────
+    public function GetAll(Request $request)
     {
-        return response()->json([
-            'data'    => Carros::with('reservas', 'precioviaje')
-                ->whereNotIn('id_estados', [4, 5])
-                ->get(),
-            'message' => 'Consulta de carros exitosa',
-        ], 200);
+        $query = Carros::with('reservas', 'precioviaje')
+            ->whereNotIn('id_estados', [4, 5]);
+
+        if ($request->filled('origen')) {
+            $query->whereHas('precioviaje', fn($q) => $q->where('origen', $request->origen));
+        }
+        if ($request->filled('destino')) {
+            $query->whereHas('precioviaje', fn($q) => $q->where('destino', $request->destino));
+        }
+        if ($request->filled('fecha')) {
+            $query->where('fecha', $request->fecha);
+        }
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(fn($q) => $q
+                ->where('conductor', 'like', "%$s%")
+                ->orWhere('placa',   'like', "%$s%")
+                ->orWhereHas('precioviaje', fn($q2) => $q2
+                    ->where('origen',  'like', "%$s%")
+                    ->orWhere('destino','like', "%$s%")
+                )
+            );
+        }
+
+        return response()->json($query->paginate(10));
     }
 
-    // ── Listar TODOS los carros (admin, todos los estados) ───────────────────────
+    // ── Listar TODOS los carros (admin, todos los estados) — paginado ─────────────
     public function GetAllAdmin()
     {
-        return response()->json([
-            'data'    => Carros::with(['reservas', 'precioviaje', 'estado'])
+        return response()->json(
+            Carros::with(['reservas', 'precioviaje', 'estado'])
                 ->orderBy('updated_at', 'desc')
-                ->get(),
-            'message' => 'Consulta de carros exitosa',
-        ], 200);
+                ->paginate(10)
+        );
     }
 
     // ── Mis carros (conductor autenticado, todos los estados) ────────────────────
@@ -262,10 +280,6 @@ class CarrosController extends Controller
             ->orderBy('updated_at', 'desc')
             ->get();
 
-        // Agrupar por carro + viaje_numero + minuto exacto de completado.
-        // El minuto separa viajes del mismo día aunque compartan viaje_numero=1 (datos pre-migración).
-        // TerminarViaje actualiza todas las reservas del mismo viaje dentro del mismo segundo,
-        // por lo que caen en el mismo minuto → mismo grupo.
         $viajes = $reservas
             ->groupBy(fn($r) => $r->id_carros . '_' . $r->viaje_numero . '_' . ($r->updated_at?->format('Y-m-d H:i') ?? 'sin_fecha'))
             ->map(function ($grupo) {
@@ -284,6 +298,12 @@ class CarrosController extends Controller
             ->sortByDesc('fecha')
             ->values();
 
-        return response()->json(['data' => $viajes, 'message' => 'Historial del conductor']);
+        $perPage   = 10;
+        $page      = max(1, (int) $request->get('page', 1));
+        $total     = $viajes->count();
+        $items     = $viajes->forPage($page, $perPage)->values();
+        $paginator = new \Illuminate\Pagination\LengthAwarePaginator($items, $total, $perPage, $page);
+
+        return response()->json($paginator);
     }
 }

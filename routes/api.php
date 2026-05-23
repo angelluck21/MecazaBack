@@ -50,6 +50,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/asignarviaje/{carro}',             [CarrosController::class, 'AsignarViaje']);
     Route::get('/mis-carros',                       [CarrosController::class, 'MisCarros']);
     Route::get('/listarcarros-admin',               [CarrosController::class, 'GetAllAdmin']);
+    Route::get('/mis-reservas',                     [ReservarviajeController::class, 'MisReservas']);
     Route::get('/historial-conductor',              [CarrosController::class, 'HistorialConductor']);
 
     // Estados

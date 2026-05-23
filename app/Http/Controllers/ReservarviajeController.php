@@ -116,10 +116,24 @@ class ReservarviajeController extends Controller
 
     public function GetAll()
     {
-        return response()->json([
-            'data'    => Reservarviaje::with(['usuario', 'carro.precioviaje'])->get(),
-            'message' => 'Consulta de reservas exitosa',
-        ], 200);
+        return response()->json(
+            Reservarviaje::with(['usuario', 'carro.precioviaje'])
+                ->orderBy('created_at', 'desc')
+                ->paginate(10)
+        );
+    }
+
+    public function MisReservas(Request $request)
+    {
+        $userId = $request->user()->id_users;
+        $carIds = \App\Models\Carros::where('id_users', $userId)->pluck('id_carros');
+
+        return response()->json(
+            Reservarviaje::with(['usuario', 'carro.precioviaje'])
+                ->whereIn('id_carros', $carIds)
+                ->orderBy('created_at', 'desc')
+                ->paginate(10)
+        );
     }
 
     public function Update(Request $request, Reservarviaje $reservarviaje)
