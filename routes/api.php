@@ -47,6 +47,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/eliminarcarro/{carro}',         [CarrosController::class, 'Destroy']);
     Route::post('/iniciarviajenotify/{carro}',      [CarrosController::class, 'IniciarViaje']);
     Route::post('/terminarviaje/{carro}',           [CarrosController::class, 'TerminarViaje']);
+    Route::put('/asignarviaje/{carro}',             [CarrosController::class, 'AsignarViaje']);
+    Route::get('/mis-carros',                       [CarrosController::class, 'MisCarros']);
+    Route::get('/listarcarros-admin',               [CarrosController::class, 'GetAllAdmin']);
     Route::get('/historial-conductor',              [CarrosController::class, 'HistorialConductor']);
 
     // Estados
@@ -81,6 +84,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/descargarFactura/{id_factura}',            [FacturasController::class, 'DescargarFactura']);
     Route::get('/misFacturas',                              [FacturasController::class, 'GetByUsuario']);
     Route::get('/listarFacturas',                           [FacturasController::class, 'GetAll']);
+    Route::get('/descargarTodasFacturas',                   [FacturasController::class, 'DescargarTodas']);
 });
 
 // ── Ruta de prueba ────────────────────────────────────────────────────────────

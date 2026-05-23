@@ -155,12 +155,12 @@
     {{-- Totales --}}
     <table class="totals-table">
         <tr>
-            <td class="label">Subtotal</td>
+            <td class="label">Precio base</td>
             <td class="value">${{ number_format($factura->subtotal, 0, ',', '.') }}</td>
         </tr>
         <tr>
-            <td class="label">IVA (19%)</td>
-            <td class="value">${{ number_format($factura->impuesto, 0, ',', '.') }}</td>
+            <td class="label" style="color:#15803d;">Descuento web (10%)</td>
+            <td class="value" style="color:#15803d;">- ${{ number_format($factura->impuesto, 0, ',', '.') }}</td>
         </tr>
         <tr class="total-final">
             <td>TOTAL</td>

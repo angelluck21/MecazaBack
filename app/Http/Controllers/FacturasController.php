@@ -27,8 +27,8 @@ class FacturasController extends Controller
 
             $precioviaje    = $carro->precioviaje;
             $subtotal       = $precioviaje ? (float) $precioviaje->precio : 50000.0;
-            $impuesto       = $subtotal * 0.19;
-            $total          = $subtotal + $impuesto;
+            $impuesto       = $subtotal * 0.10;
+            $total          = $subtotal - $impuesto;
             $numero_factura = 'FAC-' . date('YmdHis') . '-' . $id_reservarviajes;
 
             $factura = Faturaviaje::create([
@@ -136,8 +136,58 @@ class FacturasController extends Controller
     public function GetAll()
     {
         return response()->json([
-            'data' => Faturaviaje::with(['usuario', 'carro', 'reserva'])->get(),
+            'data' => Faturaviaje::with(['usuario', 'carro.precioviaje', 'reserva'])
+                ->orderBy('created_at', 'desc')
+                ->get(),
             'message' => 'Consulta de facturas exitosa',
         ], 200);
+    }
+
+    public function DescargarTodas()
+    {
+        $facturas = Faturaviaje::with(['usuario', 'carro.precioviaje', 'reserva'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        if ($facturas->isEmpty()) {
+            return response()->json(['message' => 'No hay facturas para descargar.'], 404);
+        }
+
+        $zipPath = storage_path('app/temp_facturas_' . now()->format('YmdHis') . '.zip');
+        $zip     = new \ZipArchive();
+
+        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            return response()->json(['message' => 'No se pudo crear el archivo ZIP.'], 500);
+        }
+
+        foreach ($facturas as $factura) {
+            try {
+                $carro   = Carros::with('precioviaje')->find($factura->id_carros);
+                $usuario = $factura->usuario;
+                $reserva = $factura->reserva;
+
+                $html = view('facturas.pdf', [
+                    'factura' => $factura,
+                    'usuario' => $usuario,
+                    'reserva' => $reserva,
+                    'carro'   => $carro,
+                ])->render();
+
+                $pdf     = Pdf::loadHTML($html)->setPaper('a4')
+                    ->setOptions(['dpi' => 150, 'defaultFont' => 'sans-serif', 'isHtml5ParserEnabled' => true]);
+                $content = $pdf->output();
+
+                $nombre = preg_replace('/[^A-Za-z0-9\-_]/', '_', $factura->numero_factura ?? "FAC-{$factura->id_factura}");
+                $zip->addFromString("{$nombre}.pdf", $content);
+            } catch (\Exception $e) {
+                Log::error('Error al generar PDF para ZIP', ['id' => $factura->id_factura, 'error' => $e->getMessage()]);
+            }
+        }
+
+        $zip->close();
+
+        return response()->download($zipPath, 'facturas_mecaza_' . now()->format('Ymd') . '.zip', [
+            'Content-Type' => 'application/zip',
+        ])->deleteFileAfterSend(true);
     }
 }

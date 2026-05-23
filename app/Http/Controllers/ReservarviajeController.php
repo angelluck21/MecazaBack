@@ -34,13 +34,14 @@ class ReservarviajeController extends Controller
                 ], 422);
             }
 
-            $reservar            = new Reservarviaje();
-            $reservar->nombre    = $request->Nombre;
-            $reservar->ubicacion = $request->Ubicacion;
-            $reservar->tel       = $request->user()->tel ?? $request->Telefono;
-            $reservar->asiento   = $request->Asiento;
-            $reservar->id_users  = $request->user()->id_users;
-            $reservar->id_carros = $request->id_carros;
+            $reservar               = new Reservarviaje();
+            $reservar->nombre       = $request->Nombre;
+            $reservar->ubicacion    = $request->Ubicacion;
+            $reservar->tel          = $request->user()->tel ?? $request->Telefono;
+            $reservar->asiento      = $request->Asiento;
+            $reservar->id_users     = $request->user()->id_users;
+            $reservar->id_carros    = $request->id_carros;
+            $reservar->viaje_numero = $carroSolicitado->viaje_numero ?? 1;
             $reservar->save();
 
             // Notificar al conductor por email
@@ -116,7 +117,7 @@ class ReservarviajeController extends Controller
     public function GetAll()
     {
         return response()->json([
-            'data'    => Reservarviaje::with(['usuario', 'carro'])->get(),
+            'data'    => Reservarviaje::with(['usuario', 'carro.precioviaje'])->get(),
             'message' => 'Consulta de reservas exitosa',
         ], 200);
     }
@@ -169,27 +170,9 @@ class ReservarviajeController extends Controller
         $carro   = Carros::with('precioviaje')->find($reservarviaje->id_carros);
 
         if ($usuario && $carro) {
-            // Generar factura automáticamente si se confirma
-            if (strtolower($newEstado) === 'confirmada') {
-                try {
-                    $precioviaje = $carro->precioviaje;
-                    $subtotal    = $precioviaje ? (float) $precioviaje->precio : 50000.0;
-                    $impuesto    = $subtotal * 0.19;
-                    Faturaviaje::create([
-                        'id_users'          => $reservarviaje->id_users,
-                        'id_carros'         => $reservarviaje->id_carros,
-                        'id_precioviajes'   => $precioviaje?->id_precioviajes ?? 1,
-                        'id_reservarviajes' => $reservarviaje->id_reservarviajes,
-                        'origen'            => $precioviaje?->origen  ?? '',
-                        'destino'           => $precioviaje?->destino ?? '',
-                        'subtotal'          => $subtotal,
-                        'impuesto'          => $impuesto,
-                        'total'             => $subtotal + $impuesto,
-                        'numero_factura'    => 'FAC-' . now()->format('YmdHis') . '-' . $reservarviaje->id_reservarviajes,
-                    ]);
-                } catch (\Exception $e) {
-                    Log::error('Error al generar factura automática', ['error' => $e->getMessage()]);
-                }
+            // Eliminar factura si la reserva se cancela o rechaza
+            if (in_array(strtolower($newEstado), ['cancelada', 'rechazada'])) {
+                Faturaviaje::where('id_reservarviajes', $reservarviaje->id_reservarviajes)->delete();
             }
 
             // Webhook N8N — notificación al pasajero (confirmación o rechazo)
@@ -225,6 +208,7 @@ class ReservarviajeController extends Controller
 
     public function Destroy(Reservarviaje $reservarviaje)
     {
+        Faturaviaje::where('id_reservarviajes', $reservarviaje->id_reservarviajes)->delete();
         $reservarviaje->delete();
 
         return response()->json([
