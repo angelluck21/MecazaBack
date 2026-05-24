@@ -17,19 +17,25 @@ class FacturasController extends Controller
         try {
             $reserva = Reservarviaje::findOrFail($id_reservarviajes);
 
-            if ($reserva->estado !== 'Confirmada' && $reserva->estado !== 'confirmada') {
+            if (strtolower($reserva->estado) !== 'confirmada') {
                 return response()->json([
-                    'message' => 'Solo se pueden generar facturas para reservas confirmadas',
+                    'message' => 'Solo se pueden generar facturas para reservas confirmadas.',
                 ], 400);
             }
 
-            $carro = Carros::with('precioviaje')->findOrFail($reserva->id_carros);
+            // Retornar la factura existente si ya fue generada
+            $existente = Faturaviaje::where('id_reservarviajes', $id_reservarviajes)->first();
+            if ($existente) {
+                return response()->json([
+                    'message' => 'La factura ya existe.',
+                    'data'    => $existente->load(['usuario', 'carro', 'reserva']),
+                ], 200);
+            }
 
-            $precioviaje    = $carro->precioviaje;
-            $subtotal       = $precioviaje ? (float) $precioviaje->precio : 50000.0;
-            $impuesto       = $subtotal * 0.10;
-            $total          = $subtotal - $impuesto;
-            $numero_factura = 'FAC-' . date('YmdHis') . '-' . $id_reservarviajes;
+            $carro       = Carros::with('precioviaje')->findOrFail($reserva->id_carros);
+            $precioviaje = $carro->precioviaje;
+            $subtotal    = $precioviaje ? (float) $precioviaje->precio : 50000.0;
+            $impuesto    = $subtotal * 0.10;
 
             $factura = Faturaviaje::create([
                 'id_users'          => $reserva->id_users,
@@ -40,19 +46,34 @@ class FacturasController extends Controller
                 'destino'           => $precioviaje?->destino ?? '',
                 'subtotal'          => $subtotal,
                 'impuesto'          => $impuesto,
-                'total'             => $total,
-                'numero_factura'    => $numero_factura,
+                'total'             => $subtotal - $impuesto,
+                'numero_factura'    => 'FAC-' . now()->format('YmdHis') . '-' . $id_reservarviajes,
             ]);
 
             return response()->json([
-                'message' => 'Factura generada exitosamente',
-                'data' => $factura->load(['usuario', 'carro', 'reserva']),
+                'message' => 'Factura generada exitosamente.',
+                'data'    => $factura->load(['usuario', 'carro', 'reserva']),
             ], 201);
+
+        } catch (\Illuminate\Database\QueryException $e) {
+            // La restricción unique de BD evitó un duplicado simultáneo
+            $existente = Faturaviaje::where('id_reservarviajes', $id_reservarviajes)
+                ->with(['usuario', 'carro', 'reserva'])
+                ->first();
+            if ($existente) {
+                return response()->json([
+                    'message' => 'La factura ya existe.',
+                    'data'    => $existente,
+                ], 200);
+            }
+            Log::error('Error de BD al generar factura', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Error al generar la factura.'], 500);
+
         } catch (\Exception $e) {
             Log::error('Error al generar factura', ['error' => $e->getMessage()]);
             return response()->json([
-                'message' => 'Error al generar la factura',
-                'error' => $e->getMessage(),
+                'message' => 'Error al generar la factura.',
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }

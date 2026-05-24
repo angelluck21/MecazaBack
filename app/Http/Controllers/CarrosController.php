@@ -3,24 +3,30 @@
 namespace App\Http\Controllers;
 
 use App\Models\Carros;
+use App\Models\Notificacion;
 use App\Models\Reservarviaje;
 use App\Models\Faturaviaje;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use App\Rules\RealImageMime;
 
 class CarrosController extends Controller
 {
+    private function isAdmin(Request $request): bool
+    {
+        $rol = strtolower($request->user()?->rol ?? '');
+        return $rol === 'admin' || $rol === 'administrador';
+    }
+
     // ── Crear vehículo (solo datos del carro, sin viaje) ─────────────────────────
     public function Create(Request $request)
     {
         $request->validate([
-            'Imagencarro' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'Imagencarro' => ['required', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048', new RealImageMime()],
             'Conductor'   => 'required|string',
             'Telefono'    => 'required|string',
             'Placa'       => 'required|string|unique:carros,placa',
-            'Asientos'    => 'required|integer|min:1|max:20',
-            'Userid'      => 'required|integer',
         ]);
 
         try {
@@ -45,9 +51,9 @@ class CarrosController extends Controller
                 'imagencarro'    => $urlImagen,
                 'telefono'       => $request->Telefono,
                 'placa'          => $request->Placa,
-                'asientos'       => $request->Asientos,
+                'asientos'       => 4,
                 'id_estados'     => 4, // Fuera de servicio por defecto
-                'id_users'       => $request->Userid,
+                'id_users'       => $request->user()->id_users,
                 'id_precioviaje' => null,
                 'horasalida'     => null,
                 'fecha'          => null,
@@ -74,8 +80,12 @@ class CarrosController extends Controller
         $request->validate([
             'id_precioviaje' => 'required|integer',
             'horasalida'     => 'required|string',
-            'fecha'          => 'required|date',
+            'fecha'          => 'required|date|after_or_equal:today',
         ]);
+
+        if (!$this->isAdmin($request) && $carro->id_users !== $request->user()->id_users) {
+            return response()->json(['message' => 'No autorizado.'], 403);
+        }
 
         $estadoActual = (int) $carro->id_estados;
         if ($estadoActual !== 4 && $estadoActual !== 5) {
@@ -162,6 +172,10 @@ class CarrosController extends Controller
 
     public function Update(Request $request, Carros $carro)
     {
+        if (!$this->isAdmin($request) && $carro->id_users !== $request->user()->id_users) {
+            return response()->json(['message' => 'No autorizado.'], 403);
+        }
+
         $carro->update([
             'conductor'  => $request->Conductor,
             'placa'      => $request->Placa,
@@ -175,7 +189,12 @@ class CarrosController extends Controller
 
     public function UpdateEstado(Request $request, Carros $carro)
     {
-        $request->validate(['id_estados' => 'required|integer']);
+        $request->validate(['id_estados' => 'required|integer|in:1,2,3,4,5']);
+
+        if (!$this->isAdmin($request) && $carro->id_users !== $request->user()->id_users) {
+            return response()->json(['message' => 'No autorizado.'], 403);
+        }
+
         $carro->update(['id_estados' => $request->id_estados]);
 
         return response()->json([
@@ -184,45 +203,42 @@ class CarrosController extends Controller
         ], 200);
     }
 
-    public function Destroy(Carros $carro)
+    public function Destroy(Request $request, Carros $carro)
     {
+        if (!$this->isAdmin($request) && $carro->id_users !== $request->user()->id_users) {
+            return response()->json(['message' => 'No autorizado.'], 403);
+        }
+
         $carro->delete();
         return response()->json(['message' => 'Carro eliminado exitosamente'], 200);
     }
 
     public function IniciarViaje(Request $request, Carros $carro)
     {
+        if (!$this->isAdmin($request) && $carro->id_users !== $request->user()->id_users) {
+            return response()->json(['message' => 'No autorizado.'], 403);
+        }
+
         $carro->update(['id_estados' => 2]);
 
-        // Generar factura para cada reserva confirmada del carro
-        $reservasConfirmadas = Reservarviaje::where('id_carros', $carro->id_carros)
-            ->whereIn('estado', ['Confirmada', 'confirmada'])
-            ->get();
-
-        $precioRecord = $carro->load('precioviaje')->precioviaje;
-        $subtotal     = $precioRecord ? (float) $precioRecord->precio : 50000.0;
-        $impuesto     = $subtotal * 0.10;
-
-        foreach ($reservasConfirmadas as $reserva) {
-            $yaExiste = Faturaviaje::where('id_reservarviajes', $reserva->id_reservarviajes)->exists();
-            if (!$yaExiste) {
-                try {
-                    Faturaviaje::create([
-                        'id_users'          => $reserva->id_users,
-                        'id_carros'         => $reserva->id_carros,
-                        'id_precioviajes'   => $precioRecord?->id_precioviajes ?? 1,
-                        'id_reservarviajes' => $reserva->id_reservarviajes,
-                        'origen'            => $precioRecord?->origen ?? '',
-                        'destino'           => $precioRecord?->destino ?? '',
-                        'subtotal'          => $subtotal,
-                        'impuesto'          => $impuesto,
-                        'total'             => $subtotal - $impuesto,
-                        'numero_factura'    => 'FAC-' . now()->format('YmdHis') . rand(10, 99) . '-' . $reserva->id_reservarviajes,
-                    ]);
-                } catch (\Exception $e) {
-                    Log::error('Error al generar factura al iniciar viaje', ['error' => $e->getMessage()]);
-                }
-            }
+        // Notify all confirmed passengers
+        try {
+            $carro->load('precioviaje');
+            $ruta = ($carro->precioviaje?->origen ?? '') . ' → ' . ($carro->precioviaje?->destino ?? '');
+            Reservarviaje::where('id_carros', $carro->id_carros)
+                ->whereRaw('LOWER(estado) = ?', ['confirmada'])
+                ->pluck('id_users')
+                ->each(function ($userId) use ($carro, $ruta) {
+                    Notificacion::crear(
+                        $userId,
+                        '¡Tu viaje ha comenzado!',
+                        'El viaje ' . $ruta . ' con ' . $carro->conductor . ' ha iniciado. ¡Buen viaje!',
+                        'success',
+                        ['id_carros' => $carro->id_carros]
+                    );
+                });
+        } catch (\Exception $e) {
+            Log::error('Error al crear notificaciones de inicio de viaje', ['error' => $e->getMessage()]);
         }
 
         return response()->json(['message' => 'Viaje iniciado correctamente.', 'data' => $carro->fresh()], 200);
@@ -230,6 +246,10 @@ class CarrosController extends Controller
 
     public function TerminarViaje(Request $request, Carros $carro)
     {
+        if (!$this->isAdmin($request) && $carro->id_users !== $request->user()->id_users) {
+            return response()->json(['message' => 'No autorizado.'], 403);
+        }
+
         $reservas = Reservarviaje::where('id_carros', $carro->id_carros)
             ->whereRaw('LOWER(estado) = ?', ['confirmada'])
             ->get();
@@ -237,6 +257,20 @@ class CarrosController extends Controller
         foreach ($reservas as $reserva) {
             $reserva->estado = 'completada';
             $reserva->save();
+
+            // Notify passenger: trip completed, rate it
+            try {
+                $ruta = ($carro->precioviaje?->origen ?? '') . ' → ' . ($carro->precioviaje?->destino ?? '');
+                Notificacion::crear(
+                    $reserva->id_users,
+                    'Viaje completado',
+                    '¡Llegaste! El viaje ' . $ruta . ' ha finalizado. Califica tu experiencia.',
+                    'info',
+                    ['id_reservarviajes' => $reserva->id_reservarviajes]
+                );
+            } catch (\Exception $e) {
+                Log::error('Error al crear notificación de viaje completado', ['error' => $e->getMessage()]);
+            }
 
             $tieneFactura = Faturaviaje::where('id_reservarviajes', $reserva->id_reservarviajes)->exists();
             if (!$tieneFactura) {
@@ -255,8 +289,10 @@ class CarrosController extends Controller
                         'subtotal'          => $subtotal,
                         'impuesto'          => $impuesto,
                         'total'             => $subtotal - $impuesto,
-                        'numero_factura'    => 'FAC-' . now()->format('YmdHis') . rand(10, 99) . '-' . $reserva->id_reservarviajes,
+                        'numero_factura'    => 'FAC-' . now()->format('YmdHis') . '-' . $reserva->id_reservarviajes,
                     ]);
+                } catch (\Illuminate\Database\QueryException $e) {
+                    // Unique constraint de BD: factura ya existe, ignorar
                 } catch (\Exception $e) {
                     Log::error('Error al generar factura al terminar viaje', ['error' => $e->getMessage()]);
                 }
@@ -272,38 +308,12 @@ class CarrosController extends Controller
     {
         $userId = $request->user()->id_users;
 
-        // Traer todas las reservas completadas de los carros del conductor,
-        // agrupadas por viaje_numero para mostrar cada viaje por separado.
-        $reservas = Reservarviaje::with(['usuario', 'carro.precioviaje'])
-            ->whereHas('carro', fn($q) => $q->where('id_users', $userId))
-            ->where('estado', 'completada')
-            ->orderBy('updated_at', 'desc')
-            ->get();
-
-        $viajes = $reservas
-            ->groupBy(fn($r) => $r->id_carros . '_' . $r->viaje_numero . '_' . ($r->updated_at?->format('Y-m-d H:i') ?? 'sin_fecha'))
-            ->map(function ($grupo) {
-                $primera = $grupo->first();
-                $carro   = $primera->carro;
-                return [
-                    'id_carros'    => $primera->id_carros,
-                    'viaje_numero' => $primera->viaje_numero,
-                    'placa'        => $carro?->placa,
-                    'precioviaje'  => $carro?->precioviaje,
-                    'fecha'        => $primera->updated_at?->toDateString(),
-                    'horasalida'   => $carro?->horasalida,
-                    'reservas'     => $grupo->values(),
-                ];
-            })
-            ->sortByDesc('fecha')
-            ->values();
-
-        $perPage   = 10;
-        $page      = max(1, (int) $request->get('page', 1));
-        $total     = $viajes->count();
-        $items     = $viajes->forPage($page, $perPage)->values();
-        $paginator = new \Illuminate\Pagination\LengthAwarePaginator($items, $total, $perPage, $page);
-
-        return response()->json($paginator);
+        return response()->json(
+            Reservarviaje::with(['usuario', 'carro.precioviaje'])
+                ->whereHas('carro', fn($q) => $q->where('id_users', $userId))
+                ->where('estado', 'completada')
+                ->orderBy('updated_at', 'desc')
+                ->paginate(10)
+        );
     }
 }

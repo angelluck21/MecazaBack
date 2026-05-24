@@ -12,7 +12,21 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->statefulApi();
+
+        // Public auth endpoints bootstrap the CSRF flow — they cannot carry
+        // a valid token before a session exists, so exclude them.
+        $middleware->validateCsrfTokens(except: [
+            'api/login',
+            'api/registrar',
+            'api/auth/google',
+            'api/registrar-conductor/*',
+            'api/validar-invitacion/*',
+        ]);
+
+        $middleware->alias([
+            'role' => \App\Http\Middleware\CheckRole::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

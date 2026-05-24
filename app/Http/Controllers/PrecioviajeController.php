@@ -26,10 +26,16 @@ class PrecioviajeController extends Controller
         ], 201);
     }
 
-    public function GetAll()
+    public function GetAll(Request $request)
     {
+        if ($request->filled('page')) {
+            return response()->json(
+                Precioviajes::orderBy('created_at', 'desc')->paginate(15)
+            );
+        }
+
         return response()->json([
-            'data'    => Precioviajes::all(),
+            'data'    => Precioviajes::orderBy('created_at', 'desc')->get(),
             'message' => 'Consulta de precios exitosa',
         ], 200);
     }
