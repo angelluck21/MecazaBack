@@ -44,4 +44,12 @@ class NotificacionController extends Controller
 
         return response()->json(['message' => 'Todas las notificaciones marcadas como leídas']);
     }
+
+    public function EliminarTodas(Request $request)
+    {
+        Notificacion::where('id_users', $request->user()->id_users)
+            ->delete();
+
+        return response()->json(['message' => 'Todas las notificaciones eliminadas']);
+    }
 }

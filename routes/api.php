@@ -59,6 +59,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/notificaciones/contador',     [NotificacionController::class, 'ContadorNoLeidas']);
     Route::put('/notificaciones/leer-todas',   [NotificacionController::class, 'MarcarTodasLeidas']);
     Route::put('/notificaciones/{id}/leida',   [NotificacionController::class, 'MarcarLeida']);
+    Route::delete('/notificaciones',           [NotificacionController::class, 'EliminarTodas']);
 
     // Exportar datos personales (GDPR)
     Route::get('/exportar-mis-datos', [RegistroController::class, 'ExportarMisDatos']);
